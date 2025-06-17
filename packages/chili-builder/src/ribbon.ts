@@ -68,10 +68,6 @@ export const DefaultRibbon: RibbonTab[] = [
                 groupName: "ribbon.group.importExport",
                 items: ["file.import", "file.export"],
             },
-            {
-                groupName: "ribbon.group.other",
-                items: ["wechat.group"],
-            },
         ],
     },
     {
@@ -122,10 +118,6 @@ export const DefaultRibbon: RibbonTab[] = [
             {
                 groupName: "ribbon.group.act",
                 items: ["act.alignCamera"],
-            },
-            {
-                groupName: "ribbon.group.other",
-                items: ["test.performace"],
             },
         ],
     },

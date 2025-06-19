@@ -199,16 +199,6 @@ export class Ribbon extends HTMLElement {
         );
     }
 
-    private rightPanel() {
-        return div(
-            { className: style.right },
-            a(
-                { href: "https://github.com/xiangechen/chili3d", target: "_blank" },
-                svg({ title: "Github", className: style.icon, icon: "icon-github" }),
-            ),
-        );
-    }
-
     private ribbonTabs() {
         return collection({
             className: style.tabContentPanel,

@@ -108,17 +108,6 @@ export class Home extends HTMLElement {
             : "";
     }
 
-    private links() {
-        return div(
-            { className: style.bottom },
-            a({
-                textContent: "Github",
-                href: "https://github.com/xiangechen/chili3d",
-                target: "_blank",
-            }),
-        );
-    }
-
     private rightSection(documents: ObservableCollection<RecentDocumentDTO>) {
         return div(
             { className: style.right },

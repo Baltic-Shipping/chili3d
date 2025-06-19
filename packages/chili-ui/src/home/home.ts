@@ -70,7 +70,6 @@ export class Home extends HTMLElement {
                 this.applicationCommands(),
                 this.currentDocument(),
             ),
-            this.links(),
         );
     }
 

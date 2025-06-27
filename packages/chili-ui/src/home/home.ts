@@ -12,8 +12,10 @@ import {
     PubSub,
     RecentDocumentDTO,
 } from "chili-core";
+
 import style from "./home.module.css";
 import { LanguageSelector } from "./languageSelector";
+import { Navigation3DSelector } from "./navigation3DSelector";
 
 interface ApplicationCommand {
     display: I18nKeys;
@@ -53,11 +55,7 @@ export class Home extends HTMLElement {
 
     async render() {
         const documents = await this.getDocuments();
-        this.append(
-            this.leftSection(),
-            this.rightSection(documents),
-            LanguageSelector({ className: style.language }),
-        );
+        this.append(this.leftSection(), this.rightSection(documents));
         document.body.appendChild(this);
     }
 
@@ -69,6 +67,26 @@ export class Home extends HTMLElement {
                 this.logoSection(),
                 this.applicationCommands(),
                 this.currentDocument(),
+            ),
+
+            div(
+                { className: style.settingsPanel },
+                div(
+                    { className: style.settingItem },
+                    span({
+                        className: style.settingLabel,
+                        textContent: new Localize("common.language"),
+                    }),
+                    div({ className: style.settingControl }, LanguageSelector({})),
+                ),
+                div(
+                    { className: style.settingItem },
+                    span({
+                        className: style.settingLabel,
+                        textContent: new Localize("common.3DNavigation"),
+                    }),
+                    div({ className: style.settingControl }, Navigation3DSelector({})),
+                ),
             ),
         );
     }

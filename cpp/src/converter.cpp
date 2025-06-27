@@ -401,27 +401,6 @@ public:
 
         return node;
     }
-
-    static std::string convertToStl(const TopoDS_Shape& shapeToExport)
-    {
-        std::string dummyFileName = "temp_export.stl";
-        auto lineDeflection = boundingBoxRatio(shapeToExport, 0.05);
-        BRepMesh_IncrementalMesh mesh(shapeToExport, lineDeflection, true, 0.2,
-            true);
-        StlAPI_Writer stlWriter;
-        if (!stlWriter.Write(shapeToExport, dummyFileName.c_str())) {
-            BRepTools::Clean(shapeToExport, true);
-            return std::string();
-        }
-        BRepTools::Clean(shapeToExport, true);
-
-        std::ifstream in(dummyFileName);
-        std::istreambuf_iterator<char> beg(in), end;
-        std::string str(beg, end);
-        in.close();
-
-        return str;
-    }
 };
 
 EMSCRIPTEN_BINDINGS(Converter)
@@ -443,6 +422,5 @@ EMSCRIPTEN_BINDINGS(Converter)
         .class_function("convertFromIges", &Converter::convertFromIges)
         .class_function("convertToStep", &Converter::convertToStep)
         .class_function("convertToIges", &Converter::convertToIges)
-        .class_function("convertFromStl", &Converter::convertFromStl)
-        .class_function("convertToStl", &Converter::convertToStl);
+        .class_function("convertFromStl", &Converter::convertFromStl);
 }

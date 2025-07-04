@@ -61,6 +61,7 @@ export default {
         "command.create.bezier": "贝塞尔",
         "command.create.box": "立方体",
         "command.create.popupbox": "弹出框",
+        "command.create.popuptube": "创建管道弹出框",
         "command.create.circle": "圆形",
         "command.create.cone": "圆锥",
         "command.create.copyShape": "复制形状",

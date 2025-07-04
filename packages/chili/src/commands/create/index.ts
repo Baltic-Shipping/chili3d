@@ -24,3 +24,4 @@ export * from "./section";
 export * from "./sphere";
 export * from "./sweep";
 export * from "./thickSolid";
+export * from "./popupBox";

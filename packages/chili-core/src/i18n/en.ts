@@ -60,6 +60,7 @@ export default {
         "command.create.arc": "Arc",
         "command.create.bezier": "Bezier",
         "command.create.box": "Box",
+        "command.create.popupbox": "Popup Box",
         "command.create.circle": "Circle",
         "command.create.cone": "Cone",
         "command.create.copyShape": "CopyShape",

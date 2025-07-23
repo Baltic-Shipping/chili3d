@@ -62,6 +62,7 @@ export default {
         "command.create.box": "Box",
         "command.create.popupbox": "Popup Box",
         "command.create.popuptube": "Popup Tube",
+        "command.create.popupcylinder": "Popup Cylinder",
         "command.create.circle": "Circle",
         "command.create.cone": "Cone",
         "command.create.copyShape": "Copy Shape",

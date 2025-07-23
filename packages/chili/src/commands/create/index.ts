@@ -26,3 +26,4 @@ export * from "./sweep";
 export * from "./thickSolid";
 export * from "./popupBox";
 export * from "./popupTube";
+export * from "./popupCylinder";

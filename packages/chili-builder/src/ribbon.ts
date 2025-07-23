@@ -15,7 +15,7 @@ export const DefaultRibbon: RibbonTab[] = [
                     "create.rect",
                     "create.circle",
                     ["create.ellipse", "create.bezier", "create.polygon"],
-                    ["create.popupbox", "create.popuptube", "create.pyramid", "create.cylinder"],
+                    ["create.popupbox", "create.popuptube", "create.pyramid", "create.popupcylinder"],
                     ["create.cone", "create.sphere", "create.thickSolid"],
                 ],
             },

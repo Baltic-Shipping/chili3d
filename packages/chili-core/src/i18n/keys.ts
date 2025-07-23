@@ -57,6 +57,7 @@ const I18N_KEYS = [
     "command.create.box",
     "command.create.popupbox",
     "command.create.popuptube",
+    "command.create.popupcylinder",
     "command.create.circle",
     "command.create.cone",
     "command.create.copyShape",

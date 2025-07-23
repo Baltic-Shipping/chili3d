@@ -285,7 +285,6 @@ export class ShapeFactory implements IShapeFactory {
             ),
         );
     }
-
     curveProjection(curve: IEdge | IWire, targetFace: IFace, vec: XYZ): Result<IShape> {
         return convertShapeResult(
             wasm.ShapeFactory.curveProjection(

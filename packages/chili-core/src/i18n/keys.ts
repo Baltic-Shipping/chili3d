@@ -102,7 +102,7 @@ const I18N_KEYS = [
     "command.modify.split",
     "command.modify.trim",
     "command.special.last",
-    "command.test.performace",
+    "command.test.performance",
     "command.wechat.group",
     "command.workingPlane.alignToPlane",
     "command.workingPlane.fromSection",
@@ -113,6 +113,10 @@ const I18N_KEYS = [
     "common.back",
     "common.language",
     "common.3DNavigation",
+    "common.theme",
+    "common.theme.light",
+    "common.theme.dark",
+    "common.theme.system",
     "common.cancel",
     "common.clone",
     "common.color",
@@ -242,6 +246,11 @@ const I18N_KEYS = [
     "transform.scale",
     "transform.translation",
     "vertex.point",
+    "viewport.orthographic",
+    "viewport.perspective",
+    "viewport.fitContent",
+    "viewport.zoomIn",
+    "viewport.zoomOut",
 ] as const;
 
 export type I18nKeys = (typeof I18N_KEYS)[number];

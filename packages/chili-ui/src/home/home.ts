@@ -80,7 +80,6 @@ export class Home extends HTMLElement {
         return div(
             { className: style.logo },
             img({ src: logoUrl }),
-            span({ textContent: "Fabbro" }),
         );
     }
 

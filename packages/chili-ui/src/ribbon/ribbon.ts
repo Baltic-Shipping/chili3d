@@ -26,6 +26,7 @@ import { RibbonButton } from "./ribbonButton";
 import { RibbonCommandData, RibbonGroupData, RibbonTabData } from "./ribbonData";
 import { RibbonStack } from "./ribbonStack";
 import logoUrl from "../home/fabbro.png";
+import homeStyle from "../home/home.module.css";
 
 export class RibbonDataContent extends Observable {
     readonly quickCommands = new ObservableCollection<CommandKeys>();
@@ -125,7 +126,7 @@ export class Ribbon extends HTMLElement {
             { className: style.left },
             div(
                 { className: style.appIcon, onclick: () => PubSub.default.pub("displayHome", true) },
-                img({ className: style.icon, src: logoUrl, }),
+                img({ className: homeStyle.logo, src: logoUrl, }),
             ),
             div(
                 { className: style.ribbonTitlePanel },

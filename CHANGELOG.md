@@ -11,3 +11,4 @@
 **2025-07-24**  - clean up lithuanian translations, add templates tab
 **2025-07-24**  - replace chilli logo with fabbro
 **2025-07-24**  - Add Rspack asset rule to handle PNG (and other) image imports
+**2025-07-24**  - logo adjustments

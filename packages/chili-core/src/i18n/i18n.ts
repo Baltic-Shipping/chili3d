@@ -4,12 +4,12 @@
 import { Config } from "../config";
 import en from "./en";
 import { I18nKeys } from "./keys";
-import zh from "./zh-cn";
+import lt from "./lt";
 
 const I18nId = "chili18n";
 const I18nArgs = new WeakMap<HTMLElement, any[]>();
 
-export type LanguageCode = "zh-CN" | "en";
+export type LanguageCode = "en" | "lt";
 
 export type Locale = {
     display: string;
@@ -36,7 +36,7 @@ export type Translation = Record<I18nKeys, string>;
 export namespace I18n {
     export const languages = new Map<LanguageCode, Locale>([
         ["en", en],
-        ["zh-CN", zh],
+        ["lt", lt],
     ]);
 
     let _currentLanguage: LanguageCode | undefined = undefined;
@@ -46,7 +46,8 @@ export namespace I18n {
     }
 
     export function defaultLanguageIndex() {
-        return navigator.language.toLowerCase() === "zh-cn" ? 1 : 0;
+        const lang = navigator.language.toLowerCase().split(/[-_]/)[0];
+        return lang === "lt" ? 1 : 0;
     }
 
     export function combineTranslation(language: LanguageCode, translations: Record<string, string>) {
@@ -61,7 +62,7 @@ export namespace I18n {
 
     export function translate(key: I18nKeys, ...args: any[]) {
         let language = languages.get(currentLanguage())!;
-        let text = language.translation[key] ?? languages.get("zh-CN")!.translation[key];
+        let text = language.translation[key] ?? languages.get("en")!.translation[key];
         if (args.length > 0) {
             text = text.replace(/\{(\d+)\}/g, (_, index) => args[index]);
         }
@@ -69,7 +70,7 @@ export namespace I18n {
     }
 
     export function isI18nKey(key: string): key is I18nKeys {
-        return key in languages.get("zh-CN")!.translation;
+        return key in languages.get("en")!.translation;
     }
 
     const LINK_KEY = "_:_";

@@ -1,3 +1,4 @@
+// See CHANGELOG.md for modifications (updated 2025-07-24)
 const rspack = require("@rspack/core");
 const { defineConfig } = require("@rspack/cli");
 const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
@@ -26,8 +27,16 @@ const config = defineConfig({
                 type: "asset",
             },
             {
-                test: /\.jpg$/,
+                test: /\.(png|jpe?g|gif|webp|svg)$/i,
                 type: "asset",
+                parser: {
+                    dataUrlCondition: {
+                        maxSize: 10 * 1024,
+                    },
+                },
+                generator: {
+                    filename: "static/media/[name].[contenthash][ext]",
+                },
             },
             {
                 test: /\.(j|t)s$/,
@@ -45,7 +54,7 @@ const config = defineConfig({
         ],
     },
     resolve: {
-        extensions: [".ts", ".js"],
+        extensions: [".ts", ".js", ".png", ".jpg", ".jpeg", ".svg", ".webp"],
         fallback: {
             fs: false,
             perf_hooks: false,

@@ -1,3 +1,4 @@
+// See CHANGELOG.md for modifications (updated 2025-07-23)
 import { command, IApplication, Transaction } from "chili-core";
 import { BooleanNode } from "../../bodys/boolean";
 

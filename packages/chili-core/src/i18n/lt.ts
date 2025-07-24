@@ -1,3 +1,4 @@
+// See CHANGELOG.md for modifications (updated 2025-07-24)
 import { Locale } from "./i18n";
 
 export default {

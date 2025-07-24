@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-06-19)
+// See CHANGELOG.md for modifications (updated 2025-07-24)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -18,6 +18,7 @@ import style from "./home.module.css";
 import { LanguageSelector } from "./languageSelector";
 import { Navigation3DSelector } from "./navigation3DSelector";
 import { ThemeSelector } from "./themeSelector";
+import logoUrl from "./fabbro.png";
 
 interface ApplicationCommand {
     display: I18nKeys;
@@ -78,9 +79,8 @@ export class Home extends HTMLElement {
     private logoSection() {
         return div(
             { className: style.logo },
-            svg({ icon: "icon-chili" }),
-            span({ textContent: "CHILI3D" }),
-            span({ className: style.version, textContent: __APP_VERSION__ }),
+            img({ src: logoUrl }),
+            span({ textContent: "Fabbro" }),
         );
     }
 

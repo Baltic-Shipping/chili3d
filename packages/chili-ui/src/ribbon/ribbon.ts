@@ -1,8 +1,8 @@
-// See CHANGELOG.md for modifications (updated 2025-06-19)
+// See CHANGELOG.md for modifications (updated 2025-07-24)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { a, collection, div, label, span, svg } from "chili-controls";
+import { a, img, collection, div, label, span, svg } from "chili-controls";
 import {
     Binding,
     ButtonSize,
@@ -25,6 +25,7 @@ import style from "./ribbon.module.css";
 import { RibbonButton } from "./ribbonButton";
 import { RibbonCommandData, RibbonGroupData, RibbonTabData } from "./ribbonData";
 import { RibbonStack } from "./ribbonStack";
+import logoUrl from "../home/fabbro.png";
 
 export class RibbonDataContent extends Observable {
     readonly quickCommands = new ObservableCollection<CommandKeys>();
@@ -124,8 +125,7 @@ export class Ribbon extends HTMLElement {
             { className: style.left },
             div(
                 { className: style.appIcon, onclick: () => PubSub.default.pub("displayHome", true) },
-                svg({ className: style.icon, icon: "icon-chili" }),
-                span({ id: "appName", textContent: `Chili3D - v${__APP_VERSION__}` }),
+                img({ className: style.icon, src: logoUrl, }),
             ),
             div(
                 { className: style.ribbonTitlePanel },

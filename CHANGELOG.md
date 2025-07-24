@@ -6,7 +6,7 @@
 **2025-07-04**  - index.ts
 **2025-07-04**  - add popupTube
 **2025-07-04**  - translation
-**2025-07-23**  - update chili.wasm.wasm
 **2025-07-23**  - add popupCylinder
 **2025-07-24**  - remove chinese language and add lithuanian
 **2025-07-24**  - clean up lithuanian translations, add templates tab
+**2025-07-24**  - replace chilli logo with fabbro

@@ -12,4 +12,4 @@
 **2025-07-24**  - replace chilli logo with fabbro
 **2025-07-24**  - add Rspack asset rule to handle PNG (and other) image imports
 **2025-07-24**  - logo adjustments
-**2025-07-24**  - replace window.prompt with built‑in showDialog in popupBox and popupCylinder commands
+**2025-07-24**  - replace window.prompt with built‑in showDialog in popupBox, popupCylinder and popupTube commands

@@ -1,51 +1,72 @@
-// See CHANGELOG.md for modifications (updated 2025-07-04)
-import { command, IApplication, Transaction } from "chili-core";
+// See CHANGELOG.md for modifications (updated 2025-07-24)
+import { command, IApplication, Transaction, PubSub, DialogResult, I18nKeys, I18n } from "chili-core";
+import { form, div, label, input } from "chili-controls";
 import { BooleanNode } from "../../bodys/boolean";
 
 @command({
-  key: "create.popuptube",
-  icon: "icon-cylinder",
+    key: "create.popuptube",
+    icon: "icon-cylinder",
 })
 export class PopupTubeCommand {
-  async execute(application: IApplication): Promise<void> {
-    const outerR = parseFloat(prompt("Outer Radius", "10") || "0");
-    const innerR = parseFloat(prompt("Inner Radius", "5")  || "0");
-    const height = parseFloat(prompt("Height",       "20") || "0");
-    if (
-      isNaN(outerR) ||
-      isNaN(innerR) ||
-      isNaN(height) ||
-      innerR >= outerR
-    ) return;
+    async execute(application: IApplication): Promise<void> {
+        const formEl = form(
+            {},
+            div(
+                {},
+                label({ textContent: I18n.translate("popuptube.outerRadius") }),
+                input({ type: "number", id: "outerRadius", value: "10", min: "0", step: "0.1" })
+            ),
+            div(
+                {},
+                label({ textContent: I18n.translate("popuptube.innerRadius") }),
+                input({ type: "number", id: "innerRadius", value: "5", min: "0", step: "0.1" })
+            ),
+            div(
+                {},
+                label({ textContent: I18n.translate("popuptube.height") }),
+                input({ type: "number", id: "height", value: "20", min: "0", step: "0.1" })
+            ),
+        );
 
-    const view  = application.activeView!;
-    const doc   = view.document;
-    const plane = view.workplane;
+        PubSub.default.pub(
+            "showDialog",
+            "dialog.title.createTube" as I18nKeys,
+            formEl,
+            (result: DialogResult) => {
+                if (result !== DialogResult.ok) return;
+                const outerR = parseFloat((formEl.querySelector("#outerRadius") as HTMLInputElement).value);
+                const innerR = parseFloat((formEl.querySelector("#innerRadius") as HTMLInputElement).value);
+                const h = parseFloat((formEl.querySelector("#height") as HTMLInputElement).value);
+                if (isNaN(outerR) || isNaN(innerR) || isNaN(h) || innerR >= outerR) return;
+                const view = application.activeView!;
+                const doc = view.document;
+                const plane = view.workplane;
+                Transaction.execute(doc, "create popup tube", () => {
+                    const outerRes = application.shapeFactory.cylinder(
+                        plane.normal,
+                        plane.origin,
+                        outerR,
+                        h
+                    );
+                    const innerRes = application.shapeFactory.cylinder(
+                        plane.normal,
+                        plane.origin,
+                        innerR,
+                        h
+                    );
+                    if (!outerRes.isOk || !innerRes.isOk) return;
 
-    Transaction.execute(doc, "create popup tube", () => {
-      const outerRes = application.shapeFactory.cylinder(
-        plane.normal,
-        plane.origin,
-        outerR,
-        height
-      );
-      const innerRes = application.shapeFactory.cylinder(
-        plane.normal,
-        plane.origin,
-        innerR,
-        height
-      );
-      if (!outerRes.isOk || !innerRes.isOk) return;
+                    const cutRes = application.shapeFactory.booleanCut(
+                        [outerRes.value],
+                        [innerRes.value]
+                    );
+                    if (!cutRes.isOk) return;
 
-      const cutRes = application.shapeFactory.booleanCut(
-        [outerRes.value],
-        [innerRes.value]
-      );
-      if (!cutRes.isOk) return;
-
-      const node = new BooleanNode(doc, cutRes.value);
-      doc.addNode(node);
-      doc.visual.update();
-    });
-  }
+                    const node = new BooleanNode(doc, cutRes.value);
+                    doc.addNode(node);
+                    doc.visual.update();
+                });
+            }
+        );
+    }
 }

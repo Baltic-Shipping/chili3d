@@ -15,7 +15,7 @@ export const DefaultRibbon: RibbonTab[] = [
                     "create.rect",
                     "create.circle",
                     ["create.ellipse", "create.bezier", "create.polygon"],
-                    ["create.popupbox", "create.popuptube", "create.pyramid", "create.popupcylinder"],
+                    ["create.box", "create.pyramid", "create.cylinder"],
                     ["create.cone", "create.sphere", "create.thickSolid"],
                 ],
             },
@@ -119,6 +119,20 @@ export const DefaultRibbon: RibbonTab[] = [
             {
                 groupName: "ribbon.group.act",
                 items: ["act.alignCamera"],
+            },
+        ],
+    },
+
+    {
+        tabName: "ribbon.tab.templates",
+        groups: [
+            {
+                groupName: "ribbon.group.templates",
+                items: [
+                    "create.popupbox",
+                    "create.popuptube",
+                    "create.popupcylinder",
+                ],
             },
         ],
     },

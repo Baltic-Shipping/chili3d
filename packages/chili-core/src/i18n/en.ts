@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-07-24)
+// See CHANGELOG.md for modifications (updated 2025-07-25)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -61,9 +61,10 @@ export default {
         "command.create.arc": "Arc",
         "command.create.bezier": "Bezier",
         "command.create.box": "Box",
-        "command.create.popupbox": "Popup Box",
-        "command.create.popuptube": "Popup Tube",
-        "command.create.popupcylinder": "Popup Cylinder",
+        "command.create.popupbox": "Box",
+        "command.create.popuptube": "Tube",
+        "command.create.popupcylinder": "Cylinder",
+        "command.create.popupTeeSection": "Tee Section",
         "command.create.circle": "Circle",
         "command.create.cone": "Cone",
         "command.create.copyShape": "Copy Shape",
@@ -143,6 +144,12 @@ export default {
         "dialog.title.createBox": "Create Box",
         "dialog.title.createCylinder": "Create Cylinder",
         "dialog.title.createTube": "Create Tube",
+        "dialog.title.createTeeSection": "Create Tee Section",
+        "popupTeeSection.flange": "Flange",
+        "popupTeeSection.flangeThickness": "Flange Thickness",
+        "popupTeeSection.web": "Web",
+        "popupTeeSection.webThickness": "Web Thickness",
+        "popupTeeSection.depth": "Depth",
         "popuptube.outerRadius": "Outer Radius",
         "popuptube.innerRadius": "Inner Radius",
         "popuptube.height": "Height",

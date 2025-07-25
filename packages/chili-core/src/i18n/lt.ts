@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-07-24)
+// See CHANGELOG.md for modifications (updated 2025-07-25)
 import { Locale } from "./i18n";
 
 export default {
@@ -140,6 +140,12 @@ export default {
         "dialog.title.createBox": "Kurti lakštą",
         "dialog.title.createCylinder": "Kurti cilindrą",
         "dialog.title.createTube": "Kurti vamzdį",
+        "dialog.title.createTeeSection": "Sukurti T formos skerspjūvį",
+        "popupTeeSection.flange": "Flanšas",
+        "popupTeeSection.flangeThickness": "Flanšo storis",
+        "popupTeeSection.web": "Juosta",
+        "popupTeeSection.webThickness": "Juostos storis",
+        "popupTeeSection.depth": "Gylis",
         "popuptube.outerRadius": "Išorinis spindulys",
         "popuptube.innerRadius": "Vidinis spindulys",
         "popuptube.height": "Aukštis",

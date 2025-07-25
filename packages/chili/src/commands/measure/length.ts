@@ -1,7 +1,8 @@
+// See CHANGELOG.md for modifications (updated 2025-07-25)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { command, Precision, VisualConfig, XYZ } from "chili-core";
+import { command, Precision, VisualConfig, XYZ, Transaction } from "chili-core";
 import { Dimension, PointSnapData } from "../../snap";
 import { IStep, PointStep } from "../../step";
 import { MultistepCommand } from "../multistepCommand";
@@ -44,14 +45,26 @@ export class LengthMeasure extends MultistepCommand {
             this.meshLine(firstPoint, secondPoint, VisualConfig.highlightEdgeColor, 3),
             this.meshPoint(secondPoint),
         ]);
-        this.application.activeView?.htmlText(
+        const disp = this.application.activeView?.htmlText(
             distance.toFixed(2),
             firstPoint.add(secondPoint).multiply(0.5),
             {
                 onDispose: () => {
                     this.document.visual.context.removeMesh(visualId);
                 },
-            },
+            }
         );
+
+        const onKey = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
+                e.preventDefault();
+                disp?.dispose();
+                window.removeEventListener("keydown", onKey);
+            }
+        };
+        window.addEventListener("keydown", onKey);
+
+        Transaction.execute(this.document, "measure length", () => {
+        });
     }
 }

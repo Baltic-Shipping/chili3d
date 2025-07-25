@@ -1,5 +1,5 @@
 // See CHANGELOG.md for modifications (updated 2025-07-25)
-import { command, IApplication, Transaction, PubSub, DialogResult, I18nKeys, I18n } from "chili-core";
+import { command, IApplication, Transaction, PubSub, DialogResult, I18nKeys, I18n, XYZ } from "chili-core";
 import { form, div, label, input } from "chili-controls";
 import { BooleanNode } from "../../bodys/boolean";
 
@@ -48,13 +48,20 @@ export class PopupTeeSectionCommand {
                 const doc = view.document;
                 const plane = view.workplane;
                 Transaction.execute(doc, "create tee section", () => {
-                    const halfWebHeight = (h - t) / 2;
-                    const halfFlangeThick = t / 2;
+                    const webHeight = h - t;
                     const halfWidthOffset = (w - t) / 2;
-                    const flangeOffset = plane.origin.add(plane.xvec.multiply(-halfWidthOffset)).add(plane.yvec.multiply(halfWebHeight + halfFlangeThick));
-                    const flangePlane = plane.translateTo(flangeOffset);
-                    const webOffset = plane.origin.add(plane.xvec.multiply(halfWidthOffset)).add(plane.yvec.multiply(-halfFlangeThick));
-                    const webPlane = plane.translateTo(webOffset);
+                    const flangeOffset = new XYZ(
+                        plane.yvec.x * webHeight,
+                        plane.yvec.y * webHeight,
+                        plane.yvec.z * webHeight
+                    );
+                    const flangePlane = plane.translateTo(plane.origin.add(flangeOffset));
+                    const webOffset = new XYZ(
+                        plane.xvec.x * halfWidthOffset,
+                        plane.xvec.y * halfWidthOffset,
+                        plane.xvec.z * halfWidthOffset
+                    );
+                    const webPlane = plane.translateTo(plane.origin.add(webOffset));
                     const flangeRes = application.shapeFactory.box(
                         flangePlane,
                         w,
@@ -64,7 +71,7 @@ export class PopupTeeSectionCommand {
                     const webRes = application.shapeFactory.box(
                         webPlane,
                         t,
-                        h - t,
+                        webHeight,
                         L
                     );
                     if (!flangeRes.isOk || !webRes.isOk) return;

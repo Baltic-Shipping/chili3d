@@ -1,5 +1,5 @@
 // See CHANGELOG.md for modifications (updated 2025-07-25)
-import { command, IApplication, Transaction, PubSub, DialogResult, I18nKeys, I18n, Plane, Vector3 } from "chili-core";
+import { command, IApplication, Transaction, PubSub, DialogResult, I18nKeys, I18n } from "chili-core";
 import { form, div, label, input } from "chili-controls";
 import { BooleanNode } from "../../bodys/boolean";
 

@@ -50,8 +50,11 @@ export class PopupTeeSectionCommand {
                 Transaction.execute(doc, "create tee section", () => {
                     const halfWebHeight = (h - t) / 2;
                     const halfFlangeThick = t / 2;
-                    const flangePlane = plane.translateTo(plane.origin.add(plane.yvec.multiply(halfWebHeight + halfFlangeThick)));
-                    const webPlane = plane.translateTo(plane.origin.add(plane.yvec.multiply(-halfFlangeThick)));
+                    const halfWidthOffset = (w - t) / 2;
+                    const flangeOffset = plane.origin.add(plane.xvec.multiply(-halfWidthOffset)).add(plane.yvec.multiply(halfWebHeight + halfFlangeThick));
+                    const flangePlane = plane.translateTo(flangeOffset);
+                    const webOffset = plane.origin.add(plane.xvec.multiply(halfWidthOffset)).add(plane.yvec.multiply(-halfFlangeThick));
+                    const webPlane = plane.translateTo(webOffset);
                     const flangeRes = application.shapeFactory.box(
                         flangePlane,
                         w,

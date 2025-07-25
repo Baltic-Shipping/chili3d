@@ -1,3 +1,4 @@
+// See CHANGELOG.md for modifications (updated 2025-07-25)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -11,6 +12,15 @@ export class Dialog {
     static show(title: I18nKeys, content: HTMLElement, callback?: (result: DialogResult) => void) {
         const dialog = document.createElement("dialog");
         document.body.appendChild(dialog);
+
+        dialog.addEventListener("keydown", (e) => {
+            e.stopPropagation();
+        });
+
+        const focusFirst = () => {
+            const fld = dialog.querySelector("input, textarea, select") as HTMLElement;
+            fld?.focus();
+        }
 
         dialog.appendChild(
             div(
@@ -38,5 +48,6 @@ export class Dialog {
         );
 
         dialog.showModal();
+        setTimeout(focusFirst, 0);
     }
 }

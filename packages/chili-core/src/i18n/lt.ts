@@ -61,6 +61,7 @@ export default {
         "command.create.popupbox": "Lakštas",
         "command.create.popuptube": "Vamzdis",
         "command.create.popupcylinder": "Cilindras",
+        "command.create.popupTeeSection": "T formos skerspjūvis",
         "command.create.circle": "Apskritimas",
         "command.create.cone": "Kūgis",
         "command.create.copyShape": "Kopijuoti formą",

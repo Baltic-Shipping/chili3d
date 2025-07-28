@@ -31,3 +31,4 @@ export * from "./popupCylinder";
 export * from "./popupTeeSection";
 export * from "./popupLSection";
 export * from "./popupHSection";
+export * from "./popupUSection";

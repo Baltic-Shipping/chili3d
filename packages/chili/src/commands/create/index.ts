@@ -30,3 +30,4 @@ export * from "./popupTube";
 export * from "./popupCylinder";
 export * from "./popupTeeSection";
 export * from "./popupLSection";
+export * from "./popupHSection";

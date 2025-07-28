@@ -135,6 +135,7 @@ export const DefaultRibbon: RibbonTab[] = [
                     "create.popupcylinder",
                     "create.popupTeeSection",
                     "create.popupLSection",
+                    "create.popupHSection",
                 ],
             },
         ],

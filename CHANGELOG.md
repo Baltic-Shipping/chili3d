@@ -14,4 +14,4 @@
 **2025-07-24**  - logo adjustments
 **2025-07-24**  - replace window.prompt with built‑in showDialog in popupBox, popupCylinder and popupTube commands
 **2025-07-25**  - add popupTeeSection, fix dialog not receiving input
-**2025-07-28**  - add popupLSection
+**2025-07-28**  - add popupLSection, add popupHSection

@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-07-25)
+// See CHANGELOG.md for modifications (updated 2025-07-28)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -65,6 +65,7 @@ export default {
         "command.create.popuptube": "Tube",
         "command.create.popupcylinder": "Cylinder",
         "command.create.popupTeeSection": "Tee Section",
+        "command.create.popupLSection": "L Section",
         "command.create.circle": "Circle",
         "command.create.cone": "Cone",
         "command.create.copyShape": "Copy Shape",
@@ -145,6 +146,11 @@ export default {
         "dialog.title.createCylinder": "Create Cylinder",
         "dialog.title.createTube": "Create Tube",
         "dialog.title.createTeeSection": "Create Tee Section",
+        "dialog.title.createLSection": "Create L Section",
+        "popupLSection.width": "Vertical Leg",
+        "popupLSection.widthTwo": "Horizontal Leg",
+        "popupLSection.thickness": "Thickness",
+        "popupLSection.length": "Length",
         "popupTeeSection.width": "Width",
         "popupTeeSection.height": "Height",
         "popupTeeSection.thickness": "Thickness",

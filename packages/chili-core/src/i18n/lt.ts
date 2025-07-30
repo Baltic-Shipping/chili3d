@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-07-28)
+// See CHANGELOG.md for modifications (updated 2025-07-30)
 import { Locale } from "./i18n";
 
 export default {
@@ -65,6 +65,7 @@ export default {
         "command.create.popupLSection": "L formos profilis",
         "command.create.popupHSection": "H formos profilis",
         "command.create.popupUSection": "U formos profilis",
+        "command.create.popupRecSection": "Stačiakampis vamzdis",
         "command.create.circle": "Apskritimas",
         "command.create.cone": "Kūgis",
         "command.create.copyShape": "Kopijuoti formą",
@@ -148,6 +149,11 @@ export default {
         "dialog.title.createLSection": "Sukurti L formos profilį",
         "dialog.title.createHSection": "Sukurti H formos profilį",
         "dialog.title.createUSection": "Sukurti U formos profilį",
+        "dialog.title.createRecSection": "Sukurti stačiakampį vamzdį",
+        "popupRecSection.height": "Aukštis",
+        "popupRecSection.width": "Plotis",
+        "popupRecSection.thickness": "Storis",
+        "popupRecSection.length": "Ilgis",
         "popupUSection.height": "Aukštis",
         "popupUSection.width": "Plotis",
         "popupUSection.thickness": "Storis",

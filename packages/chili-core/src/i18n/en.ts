@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-07-28)
+// See CHANGELOG.md for modifications (updated 2025-07-30)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -68,6 +68,7 @@ export default {
         "command.create.popupLSection": "L Section",
         "command.create.popupHSection": "H Section",
         "command.create.popupUSection": "U Section",
+        "command.create.popupRecSection": "Rectangular Section",
         "command.create.circle": "Circle",
         "command.create.cone": "Cone",
         "command.create.copyShape": "Copy Shape",
@@ -151,6 +152,11 @@ export default {
         "dialog.title.createLSection": "Create L Section",
         "dialog.title.createHSection": "Create H Section",
         "dialog.title.createUSection": "Create U Section",
+        "dialog.title.createRecSection": "Create Rectangular Section",
+        "popupRecSection.height": "Height",
+        "popupRecSection.width": "Width",
+        "popupRecSection.thickness": "Thickness",
+        "popupRecSection.length": "Length",
         "popupUSection.height": "Height",
         "popupUSection.width": "Width",
         "popupUSection.thickness": "Thickness",

@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-07-28)
+// See CHANGELOG.md for modifications (updated 2025-07-30)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -63,6 +63,7 @@ const I18N_KEYS = [
     "command.create.popupLSection",
     "command.create.popupHSection",
     "command.create.popupUSection",
+    "command.create.popupRecSection",
     "command.create.circle",
     "command.create.cone",
     "command.create.copyShape",
@@ -146,6 +147,11 @@ const I18N_KEYS = [
     "dialog.title.createLSection",
     "dialog.title.createHSection",
     "dialog.title.createUSection",
+    "dialog.title.createRecSection",
+    "popupRecSection.height",
+    "popupRecSection.width",
+    "popupRecSection.thickness",
+    "popupRecSection.length",
     "popupUSection.height",
     "popupUSection.width",
     "popupUSection.thickness",

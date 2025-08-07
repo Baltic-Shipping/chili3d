@@ -73,11 +73,11 @@ export class Editor extends HTMLElement {
             const btn = RibbonButton.fromCommandName(cmd, ButtonSize.small);
             if (btn) templatesExpander.append(btn);
         });
-        templatesExpander.append(new PropertyView({ className: style.sidebarItem }));
         this._templateSidebarEl = div(
             { 
                 className: style.sidebar, style: `width: ${this._sidebarWidth}px; overflow-y: auto;` 
             },
+            new PropertyView({ className: style.sidebarItem }),
             templatesExpander
         );
 

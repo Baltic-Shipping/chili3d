@@ -15,7 +15,6 @@ import {
     Material,
     PubSub,
     RibbonTab,
-    Localize
 } from "chili-core";
 import style from "./editor.module.css";
 import { OKCancel } from "./okCancel";
@@ -77,9 +76,9 @@ export class Editor extends HTMLElement {
         templateCommands.forEach(cmd => {
             const btn = RibbonButton.fromCommandName(cmd, ButtonSize.small);
             if (!btn) return;
-            btn.setAttribute("title", new Localize(cmd as any).toString());
-            const txt = btn.querySelector(`.${style.buttonText}`);
-            if (txt) btn.removeChild(txt);
+            const tooltip = btn.textContent?.trim() || '';
+            btn.setAttribute('title', tooltip);
+            btn.querySelectorAll('span').forEach(el => el.remove());
             contentPanel.append(btn);
         });
         this._templateSidebarEl = div(
@@ -117,8 +116,7 @@ export class Editor extends HTMLElement {
         this._isResizingSidebar = true;
         document.body.style.cursor = "ew-resize";
         const onMouseMove = (ev: MouseEvent) => {
-            if (!this._isResizingSidebar) return;
-            if (!this._sidebarEl || !this._templateSidebarEl) return;
+            if (!this._isResizingSidebar || !this._sidebarEl || !this._templateSidebarEl) return;
             const sidebarRect = this._sidebarEl.getBoundingClientRect();
             let newWidth = ev.clientX - sidebarRect.left;
             const minWidth = 75;

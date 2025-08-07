@@ -77,7 +77,7 @@ export class Editor extends HTMLElement {
             const tooltip = btn.textContent?.trim() || '';
             btn.classList.add(style.hasTooltip);
             btn.setAttribute('data-tooltip', tooltip);
-            btn.querySelectorAll('span, label').forEach(el => el.remove());
+            btn.querySelectorAll('span, label, title').forEach(el => el.remove());
             contentPanel.append(btn);
         });
         this._templateSidebarEl = div(

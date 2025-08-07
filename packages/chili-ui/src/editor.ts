@@ -31,6 +31,7 @@ export class Editor extends HTMLElement {
     private readonly _viewportContainer: HTMLDivElement;
     private _sidebarWidth: number = 360;
     private _isResizingSidebar: boolean = false;
+    private _templateSidebarEl: HTMLDivElement | null = null;
     private _sidebarEl: HTMLDivElement | null = null;
 
     constructor(app: IApplication, tabs: RibbonTab[]) {
@@ -50,6 +51,14 @@ export class Editor extends HTMLElement {
     }
 
     private render() {
+        this._templateSidebarEl = div(
+            { 
+                className: style.sidebar, style: `width: ${this._sidebarWidth}px;` 
+            },
+            div({ 
+                className: style.sidebarItem 
+            }, "1. Templates")
+        );
         this._sidebarEl = div(
             {
                 className: style.sidebar,
@@ -66,7 +75,7 @@ export class Editor extends HTMLElement {
             div(
                 { className: style.root },
                 new Ribbon(this.ribbonContent),
-                div({ className: style.content }, this._sidebarEl, this._viewportContainer),
+                div({ className: style.content }, this._templateSidebarEl, this._sidebarEl, this._viewportContainer),
                 new Statusbar(style.statusbar),
             ),
         );

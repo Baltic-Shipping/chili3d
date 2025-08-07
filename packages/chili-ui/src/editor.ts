@@ -75,7 +75,8 @@ export class Editor extends HTMLElement {
             const btn = RibbonButton.fromCommandName(cmd, ButtonSize.large);
             if (!btn) return;
             const tooltip = btn.textContent?.trim() || '';
-            btn.setAttribute('title', tooltip);
+            btn.classList.add(style.hasTooltip);
+            btn.setAttribute('data-tooltip', tooltip);
             btn.querySelectorAll('span, label').forEach(el => el.remove());
             contentPanel.append(btn);
         });

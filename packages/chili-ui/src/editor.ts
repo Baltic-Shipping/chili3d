@@ -74,11 +74,11 @@ export class Editor extends HTMLElement {
         contentPanel.style.gridTemplateColumns = "repeat(3, 1fr)";
         contentPanel.style.gap = "8px";
         templateCommands.forEach(cmd => {
-            const btn = RibbonButton.fromCommandName(cmd, ButtonSize.small);
+            const btn = RibbonButton.fromCommandName(cmd, ButtonSize.large);
             if (!btn) return;
             const tooltip = btn.textContent?.trim() || '';
             btn.setAttribute('title', tooltip);
-            btn.querySelectorAll('span').forEach(el => el.remove());
+            btn.querySelectorAll('span, label').forEach(el => el.remove());
             contentPanel.append(btn);
         });
         this._templateSidebarEl = div(

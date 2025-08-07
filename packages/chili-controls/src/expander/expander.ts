@@ -1,3 +1,4 @@
+// See CHANGELOG.md for modifications (updated 2025-08-07)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -24,6 +25,7 @@ export class Expander extends HTMLElement {
             className: style.headerText,
         });
         this.headerPanel.append(this.expanderIcon, text);
+        this.headerPanel.addEventListener("click", this._handleExpanderClick);
         super.append(this.headerPanel, this.contenxtPanel);
     }
 

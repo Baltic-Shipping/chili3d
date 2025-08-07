@@ -1,3 +1,4 @@
+// See CHANGELOG.md for modifications (updated 2025-08-07)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -72,6 +73,7 @@ export class Editor extends HTMLElement {
             const btn = RibbonButton.fromCommandName(cmd, ButtonSize.small);
             if (btn) templatesExpander.append(btn);
         });
+        templatesExpander.append(new PropertyView({ className: style.sidebarItem }));
         this._templateSidebarEl = div(
             { 
                 className: style.sidebar, style: `width: ${this._sidebarWidth}px; overflow-y: auto;` 
@@ -85,7 +87,6 @@ export class Editor extends HTMLElement {
                 style: `width: ${this._sidebarWidth}px;`,
             },
             new ProjectView({ className: style.sidebarItem }),
-            new PropertyView({ className: style.sidebarItem }),
             div({
                 className: style.sidebarResizer,
                 onmousedown: (e: MouseEvent) => this._startSidebarResize(e),

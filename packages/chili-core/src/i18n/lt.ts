@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-07-30)
+// See CHANGELOG.md for modifications (updated 2025-08-07)
 import { Locale } from "./i18n";
 
 export default {
@@ -90,7 +90,7 @@ export default {
         "command.edit.redo": "Grąžinti",
         "command.edit.undo": "Atšaukti",
         "command.file.export": "Eksportuoti",
-        "command.file.import": "Importuoti",
+        "command.file.import": "Importuoti STEP, IGES, BREP, STL",
         "command.measure.angle": "Kampas",
         "command.measure.length": "Ilgis",
         "command.measure.select": "Pasirinkti",

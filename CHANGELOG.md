@@ -16,3 +16,4 @@
 **2025-07-25**  - add popupTeeSection, fix dialog not receiving input
 **2025-07-28**  - add popupLSection, add popupHSection, popupUSection
 **2025-07-30**  - add popupRecSection
+**2025-08-07**  - add templates panel on the left side of the editor

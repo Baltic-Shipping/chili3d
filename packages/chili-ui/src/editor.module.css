@@ -1,3 +1,4 @@
+/* See CHANGELOG.md for modifications (updated 2025-08-07) */
 .root {
     width: 100%;
     height: 100%;
@@ -5,6 +6,12 @@
     display: flex;
     flex-direction: column;
     background-color: var(--background-color);
+}
+
+.templateGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
 }
 
 .templateGrid .ribbon-button {

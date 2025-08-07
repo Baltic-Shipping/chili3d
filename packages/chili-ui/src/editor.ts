@@ -70,9 +70,7 @@ export class Editor extends HTMLElement {
         ];
         const templatesExpander = new Expander("ribbon.tab.templates" as I18nKeys);
         const contentPanel = templatesExpander.contenxtPanel;
-        contentPanel.style.display = "grid";
-        contentPanel.style.gridTemplateColumns = "repeat(3, 1fr)";
-        contentPanel.style.gap = "8px";
+        contentPanel.classList.add(style.templateGrid);
         templateCommands.forEach(cmd => {
             const btn = RibbonButton.fromCommandName(cmd, ButtonSize.large);
             if (!btn) return;

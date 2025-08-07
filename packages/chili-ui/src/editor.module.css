@@ -7,6 +7,11 @@
     background-color: var(--background-color);
 }
 
+.templateGrid .ribbon-button {
+  justify-content: center;
+  padding: 8px;
+}
+
 .content {
     display: flex;
     flex-direction: row;

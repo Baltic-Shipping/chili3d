@@ -15,6 +15,7 @@ import {
     Material,
     PubSub,
     RibbonTab,
+    Localize
 } from "chili-core";
 import style from "./editor.module.css";
 import { OKCancel } from "./okCancel";
@@ -69,9 +70,17 @@ export class Editor extends HTMLElement {
             "file.import",
         ];
         const templatesExpander = new Expander("ribbon.tab.templates" as I18nKeys);
+        const contentPanel = templatesExpander.contenxtPanel;
+        contentPanel.style.display = "grid";
+        contentPanel.style.gridTemplateColumns = "repeat(3, 1fr)";
+        contentPanel.style.gap = "8px";
         templateCommands.forEach(cmd => {
             const btn = RibbonButton.fromCommandName(cmd, ButtonSize.small);
-            if (btn) templatesExpander.append(btn);
+            if (!btn) return;
+            btn.setAttribute("title", new Localize(cmd as any).toString());
+            const txt = btn.querySelector(`.${style.buttonText}`);
+            if (txt) btn.removeChild(txt);
+            contentPanel.append(btn);
         });
         this._templateSidebarEl = div(
             { 

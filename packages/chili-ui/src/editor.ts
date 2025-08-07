@@ -2,10 +2,12 @@
 // See LICENSE file in the project root for full license information.
 
 import { div, Expander } from "chili-controls";
+import { RibbonButton } from "./ribbon/ribbonButton";
 import {
     AsyncController,
     Button,
     CommandKeys,
+    ButtonSize,
     I18nKeys,
     IApplication,
     IDocument,
@@ -36,7 +38,10 @@ export class Editor extends HTMLElement {
 
     constructor(app: IApplication, tabs: RibbonTab[]) {
         super();
-        this.ribbonContent = new RibbonDataContent(app, quickCommands, tabs.map(RibbonTabData.fromProfile));
+        const allTabs = tabs.map(RibbonTabData.fromProfile);
+        const filteredTabs = allTabs.filter(tabData => tabData.tabName !== "ribbon.tab.templates");
+        this.ribbonContent = new RibbonDataContent(app, quickCommands, filteredTabs);
+
         const viewport = new LayoutViewport(app);
         viewport.classList.add(style.viewport);
         this._selectionController = new OKCancel();
@@ -51,7 +56,21 @@ export class Editor extends HTMLElement {
     }
 
     private render() {
-        const templatesExpander = new Expander("templates" as I18nKeys);
+        const templateCommands: CommandKeys[] = [
+            "create.popupbox",
+            "create.popuptube",
+            "create.popupcylinder",
+            "create.popupTeeSection",
+            "create.popupLSection",
+            "create.popupHSection",
+            "create.popupUSection",
+            "create.popupRecSection",
+        ];
+        const templatesExpander = new Expander("ribbon.tab.templates" as I18nKeys);
+        templateCommands.forEach(cmd => {
+            const btn = RibbonButton.fromCommandName(cmd, ButtonSize.small);
+            if (btn) templatesExpander.append(btn);
+        });
         this._templateSidebarEl = div(
             { 
                 className: style.sidebar, style: `width: ${this._sidebarWidth}px;` 

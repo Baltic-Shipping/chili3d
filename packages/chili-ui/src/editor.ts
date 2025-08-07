@@ -1,7 +1,7 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { div } from "chili-controls";
+import { div, Expander } from "chili-controls";
 import {
     AsyncController,
     Button,
@@ -51,14 +51,14 @@ export class Editor extends HTMLElement {
     }
 
     private render() {
+        const templatesExpander = new Expander("templates" as I18nKeys);
         this._templateSidebarEl = div(
             { 
                 className: style.sidebar, style: `width: ${this._sidebarWidth}px;` 
             },
-            div({ 
-                className: style.sidebarItem 
-            }, "1. Templates")
+            templatesExpander
         );
+
         this._sidebarEl = div(
             {
                 className: style.sidebar,
@@ -71,6 +71,7 @@ export class Editor extends HTMLElement {
                 onmousedown: (e: MouseEvent) => this._startSidebarResize(e),
             }),
         );
+        this.innerHTML = "";
         this.append(
             div(
                 { className: style.root },
@@ -87,7 +88,7 @@ export class Editor extends HTMLElement {
         document.body.style.cursor = "ew-resize";
         const onMouseMove = (ev: MouseEvent) => {
             if (!this._isResizingSidebar) return;
-            if (!this._sidebarEl) return;
+            if (!this._sidebarEl || !this._templateSidebarEl) return;
             const sidebarRect = this._sidebarEl.getBoundingClientRect();
             let newWidth = ev.clientX - sidebarRect.left;
             const minWidth = 75;
@@ -95,6 +96,7 @@ export class Editor extends HTMLElement {
             newWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
             this._sidebarWidth = newWidth;
             this._sidebarEl.style.width = `${newWidth}px`;
+            this._templateSidebarEl.style.width = `${newWidth}px`;
         };
         const onMouseUp = () => {
             this._isResizingSidebar = false;

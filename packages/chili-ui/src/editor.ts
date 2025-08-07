@@ -77,7 +77,6 @@ export class Editor extends HTMLElement {
             { 
                 className: style.sidebar, style: `width: ${this._sidebarWidth}px; overflow-y: auto;` 
             },
-            new PropertyView({ className: style.sidebarItem }),
             templatesExpander
         );
 
@@ -87,6 +86,7 @@ export class Editor extends HTMLElement {
                 style: `width: ${this._sidebarWidth}px;`,
             },
             new ProjectView({ className: style.sidebarItem }),
+            new PropertyView({ className: style.sidebarItem }),
             div({
                 className: style.sidebarResizer,
                 onmousedown: (e: MouseEvent) => this._startSidebarResize(e),

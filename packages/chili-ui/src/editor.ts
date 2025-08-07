@@ -65,6 +65,7 @@ export class Editor extends HTMLElement {
             "create.popupHSection",
             "create.popupUSection",
             "create.popupRecSection",
+            "file.import",
         ];
         const templatesExpander = new Expander("ribbon.tab.templates" as I18nKeys);
         templateCommands.forEach(cmd => {
@@ -73,7 +74,7 @@ export class Editor extends HTMLElement {
         });
         this._templateSidebarEl = div(
             { 
-                className: style.sidebar, style: `width: ${this._sidebarWidth}px;` 
+                className: style.sidebar, style: `width: ${this._sidebarWidth}px; overflow-y: auto;` 
             },
             templatesExpander
         );

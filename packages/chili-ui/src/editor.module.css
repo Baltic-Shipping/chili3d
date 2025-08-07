@@ -19,10 +19,6 @@
   padding: 8px;
 }
 
-.templateGrid.hidden {
-  display: none !important;
-}
-
 .content {
     display: flex;
     flex-direction: row;

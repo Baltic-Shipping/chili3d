@@ -1,3 +1,4 @@
+// See CHANGELOG.md for modifications (updated 2025-08-08)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -42,7 +43,7 @@ export class ThreeVisual implements IVisual {
     }
 
     protected createDefaultSelectionHandler(document: IDocument) {
-        return new NodeSelectionHandler(document, true);
+        return new NodeSelectionHandler(document, false);
     }
 
     initScene() {

@@ -113,8 +113,9 @@ export class Config extends Observable {
 
     @Serializer.serialze()
     get navigation3DIndex() {
-        return this.getPrivateValue("navigation3DIndex");
+        return this.getPrivateValue("navigation3DIndex", 0);
     }
+
     set navigation3DIndex(value: number) {
         this.setProperty("navigation3DIndex", value, () => {
             this.saveToStorage();

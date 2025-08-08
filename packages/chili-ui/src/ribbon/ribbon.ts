@@ -145,7 +145,7 @@ export class Ribbon extends HTMLElement {
                 {
                     className: style.switch,
                     role: "switch",
-                    "aria-checked": String(Config.instance.advancedMode),
+                    ariaChecked: Config.instance.advancedMode ? "true" : "false",
                     onclick: () => (Config.instance.advancedMode = !Config.instance.advancedMode),
                 },
                 input({

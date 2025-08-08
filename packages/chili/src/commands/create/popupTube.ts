@@ -1,7 +1,7 @@
 // See CHANGELOG.md for modifications (updated 2025-08-08)
 import { command, IApplication, Transaction, PubSub, DialogResult, I18nKeys, I18n } from "chili-core";
 import { form, div, label, input } from "chili-controls";
-import { BooleanNode } from "../../bodys/boolean";
+import { TubeNode } from "../../bodys";
 
 @command({
     key: "create.popuptube",
@@ -62,7 +62,7 @@ export class PopupTubeCommand {
                     );
                     if (!cutRes.isOk) return;
 
-                    const node = new BooleanNode(doc, cutRes.value);
+                    const node = new TubeNode(doc, plane, outerR, innerR, h);
                     doc.addNode(node);
                     doc.visual.update();
                 });

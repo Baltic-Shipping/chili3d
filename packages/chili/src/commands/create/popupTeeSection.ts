@@ -1,7 +1,7 @@
 // See CHANGELOG.md for modifications (updated 2025-08-08)
 import { command, IApplication, Transaction, PubSub, DialogResult, I18nKeys, I18n, XYZ } from "chili-core";
 import { form, div, label, input } from "chili-controls";
-import { BooleanNode } from "../../bodys/boolean";
+import { TeeSectionNode } from "../../bodys";
 
 @command({
     key: "create.popupTeeSection",
@@ -81,7 +81,7 @@ export class PopupTeeSectionCommand {
                     );
                     if (!fuseRes.isOk) return;
                     
-                    const node = new BooleanNode(doc, fuseRes.value);
+                    const node = new TeeSectionNode(doc, plane, w, h, t, L);
                     doc.addNode(node);
                     doc.visual.update();
                 });

@@ -1,7 +1,7 @@
-// See CHANGELOG.md for modifications (updated 2025-07-24)
+// See CHANGELOG.md for modifications (updated 2025-08-08)
 import { command, IApplication, Transaction, PubSub, DialogResult, I18nKeys, I18n } from "chili-core";
 import { form, div, label, input } from "chili-controls";
-import { BooleanNode } from "../../bodys/boolean";
+import { CylinderNode } from "../../bodys";
 
 @command({
     key: "create.popupcylinder",
@@ -36,9 +36,7 @@ export class PopupCylinderCommand {
                 const doc = view.document;
                 const plane = view.workplane;
                 Transaction.execute(doc, "create popup cylinder", () => {
-                    const cylinderRes = application.shapeFactory.cylinder(plane.normal, plane.origin, r, h);
-                    if (!cylinderRes.isOk) return;
-                    const node = new BooleanNode(doc, cylinderRes.value);
+                    const node = new CylinderNode(doc, plane.normal, plane.origin, r, h);
                     doc.addNode(node);
                     doc.visual.update();
                 });

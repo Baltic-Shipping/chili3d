@@ -1,7 +1,7 @@
 // See CHANGELOG.md for modifications (updated 2025-08-08)
 import { command, IApplication, Transaction, PubSub, DialogResult, I18nKeys, I18n } from "chili-core";
 import { form, div, label, input } from "chili-controls";
-import { BooleanNode } from "../../bodys/boolean";
+import { HSectionNode } from "../../bodys";
 
 @command({
     key: "create.popupHSection",
@@ -71,7 +71,7 @@ export class PopupHSectionCommand {
                     );
                     if (!fuse1.isOk) return;
 
-                    const node = new BooleanNode(doc, fuse1.value);
+                    const node = new HSectionNode(doc, plane, w, h, flangeT, webT, L);
                     doc.addNode(node);
                     doc.visual.update();
                 });

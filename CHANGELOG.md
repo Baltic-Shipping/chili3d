@@ -17,4 +17,4 @@
 **2025-07-28**  - add popupLSection, add popupHSection, popupUSection
 **2025-07-30**  - add popupRecSection
 **2025-08-07**  - add templates panel on the left side of the editor, improve expander usability
-**2025-08-08**  - make it so line length is always displayed, add icons
+**2025-08-08**  - make it so line length is always displayed, add icons, make templates editable through properties

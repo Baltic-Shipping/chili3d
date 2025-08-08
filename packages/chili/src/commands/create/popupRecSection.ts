@@ -1,7 +1,7 @@
 // See CHANGELOG.md for modifications (updated 2025-08-08)
 import { command, IApplication, Transaction, PubSub, DialogResult, I18nKeys, I18n } from "chili-core";
 import { form, div, label, input } from "chili-controls";
-import { BooleanNode } from "../../bodys/boolean";
+import { RecSectionNode } from "../../bodys";
 
 @command({
     key: "create.popupRecSection",
@@ -61,7 +61,7 @@ export class PopupRecSectionCommand {
                         [innerRes.value]
                     );
                     if (!cutRes.isOk) return;
-                    const node = new BooleanNode(doc, cutRes.value);
+                    const node = new RecSectionNode(doc, plane, w, h, t, L);
                     doc.addNode(node);
                     doc.visual.update();
                 });

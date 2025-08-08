@@ -145,14 +145,13 @@ export class Ribbon extends HTMLElement {
                 {
                     className: style.switch,
                     role: "switch",
-                    ariaChecked: Config.instance.advancedMode ? "true" : "false",
+                    ariaChecked: new Binding(Config.instance, "advancedMode", { convert: v => Result.ok(v ? "true" : "false") }),
                     onclick: () => (Config.instance.advancedMode = !Config.instance.advancedMode),
                 },
                 input({
                     id,
                     type: "checkbox",
-                    checked: Config.instance.advancedMode,
-                    oninput: () => (Config.instance.advancedMode = !Config.instance.advancedMode),
+                    checked: new Binding(Config.instance, "advancedMode"),
                 }),
                 div({ className: style.knob }),
             ),

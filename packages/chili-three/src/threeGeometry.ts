@@ -1,3 +1,4 @@
+// See CHANGELOG.md for modifications (updated 2025-08-08)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -13,6 +14,11 @@ import {
     ShapeMeshRange,
     ShapeNode,
     ShapeType,
+    IDisposable,
+    IEdge,
+    ISubEdgeShape,
+    VisualConfig,
+    getCurrentApplication,
 } from "chili-core";
 import { MeshUtils } from "chili-geo";
 import { Material, Mesh, MeshLambertMaterial } from "three";
@@ -27,6 +33,7 @@ import { ThreeVisualContext } from "./threeVisualContext";
 import { ThreeVisualObject } from "./threeVisualObject";
 
 export class ThreeGeometry extends ThreeVisualObject implements IVisualGeometry {
+    private _edgeLabels: IDisposable[] = [];
     private _faceMaterial: Material | Material[];
     private _edges?: LineSegments2;
     private _faces?: Mesh;
@@ -71,10 +78,44 @@ export class ThreeGeometry extends ThreeVisualObject implements IVisualGeometry 
         }
     };
 
+    private createEdgeLabels() {
+        if (!VisualConfig.showEdgeDimensions) return;
+        const mesh = this.geometryNode.mesh;
+        const edges = mesh?.edges;
+        if (!edges || !edges.range?.length) return;
+
+        const view = getCurrentApplication()?.activeView;
+        if (!view) return;
+
+        for (let i = 0; i < edges.range.length; i++) {
+            const r = edges.range[i];
+            if (r.shape.shapeType !== ShapeType.Edge) continue;
+
+            const tr = r.transform ?? Matrix4.identity();
+            const se = r.shape as ISubEdgeShape;
+            const e = se.transformedMul(tr) as IEdge;
+
+            const s = e.curve.startPoint();
+            const t = e.curve.endPoint();
+            const mid = s.add(t).multiply(0.5);
+
+            const disp = view.htmlText(e.length().toFixed(2), mid, { hideDelete: true });
+            this._edgeLabels.push(disp);
+
+            e.dispose();
+        }
+    }
+
     private generateShape() {
         const mesh = this.geometryNode.mesh;
         if (mesh?.faces?.position.length) this.initFaces(mesh.faces);
         if (mesh?.edges?.position.length) this.initEdges(mesh.edges);
+        this.createEdgeLabels();
+    }
+
+    private disposeEdgeLabels() {
+        this._edgeLabels.forEach(d => d.dispose());
+        this._edgeLabels.length = 0;
     }
 
     override dispose() {
@@ -84,6 +125,7 @@ export class ThreeGeometry extends ThreeVisualObject implements IVisualGeometry 
     }
 
     private removeMeshes() {
+        this.disposeEdgeLabels();
         if (this._edges) {
             this.remove(this._edges);
             this._edges.geometry.dispose();

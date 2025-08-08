@@ -1,8 +1,8 @@
-// See CHANGELOG.md for modifications (updated 2025-08-08)
+// See CHANGELOG.md for modifications (updated 2025-08-07)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { div, Expander, input, label } from "chili-controls";
+import { div, Expander } from "chili-controls";
 import { RibbonButton } from "./ribbon/ribbonButton";
 import {
     AsyncController,
@@ -15,9 +15,6 @@ import {
     Material,
     PubSub,
     RibbonTab,
-    Binding,
-    Config,
-    Result
 } from "chili-core";
 import style from "./editor.module.css";
 import { OKCancel } from "./okCancel";
@@ -30,12 +27,6 @@ import { Statusbar } from "./statusbar";
 import { LayoutViewport } from "./viewport";
 
 let quickCommands: CommandKeys[] = ["doc.save", "doc.saveToFile", "edit.undo", "edit.redo"];
-
-class BoolToDisplay {
-    convert(value: boolean): Result<string> {
-        return Result.ok(value ? "" : "none");
-    }
-}
 
 export class Editor extends HTMLElement {
     readonly ribbonContent: RibbonDataContent;
@@ -64,24 +55,6 @@ export class Editor extends HTMLElement {
         this.render();
         document.body.appendChild(this);
     }
-
-    private basicAdvancedToggle() {
-        const id = "advanced-mode-toggle";
-        return div(
-            { className: style.advancedToggle },
-            input({
-                type: "checkbox",
-                id,
-                checked: Config.instance.showStartupRibbon,
-                onclick: () => (Config.instance.showStartupRibbon = !Config.instance.showStartupRibbon),
-            }),
-            label({
-                htmlFor: id,
-                textContent: "Advanced",
-            }),
-        );
-    }
-
 
     private render() {
         const templateCommands: CommandKeys[] = [
@@ -131,11 +104,7 @@ export class Editor extends HTMLElement {
         this.append(
             div(
                 { className: style.root },
-                div(
-                    { style: { display: new Binding(Config.instance, "showStartupRibbon", new BoolToDisplay()) } },
-                    new Ribbon(this.ribbonContent),
-                ),
-                this.basicAdvancedToggle(),
+                new Ribbon(this.ribbonContent),
                 div({ className: style.content }, this._templateSidebarEl, this._sidebarEl, this._viewportContainer),
                 new Statusbar(style.statusbar),
             ),

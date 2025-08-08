@@ -2,7 +2,7 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { a, img, collection, div, label, span, svg } from "chili-controls";
+import { a, img, collection, div, label, span, svg, input } from "chili-controls";
 import {
     Binding,
     ButtonSize,
@@ -19,6 +19,7 @@ import {
     ObservableCollection,
     PubSub,
     Result,
+    Config,
 } from "chili-core";
 import { CommandContext } from "./commandContext";
 import style from "./ribbon.module.css";
@@ -107,6 +108,12 @@ class DisplayConverter implements IConverter<RibbonTabData> {
     }
 }
 
+class BoolToDisplay implements IConverter<boolean> {
+  convert(value: boolean): Result<string> {
+    return Result.ok(value ? "" : "none");
+  }
+}
+
 export class Ribbon extends HTMLElement {
     private readonly _commandContext = div({ className: style.commandContextPanel });
     private commandContext?: CommandContext;
@@ -114,11 +121,43 @@ export class Ribbon extends HTMLElement {
     constructor(readonly dataContent: RibbonDataContent) {
         super();
         this.className = style.root;
-        this.append(this.header(), this.ribbonTabs(), this._commandContext);
+        this.append(
+        this.header(),
+        div(
+            { style: { display: new Binding(Config.instance, "advancedMode", new BoolToDisplay()) } },
+            this.ribbonTabs(),
+        ),
+        this._commandContext,
+        );
+
     }
 
     private header() {
-        return div({ className: style.titleBar }, this.leftPanel(), this.centerPanel());
+        return div({ className: style.titleBar }, this.leftPanel(), this.centerPanel(), this.modeToggle());
+    }
+
+    private modeToggle() {
+        const id = "mode-toggle";
+        return div(
+            { className: style.modeToggle },
+            label({ htmlFor: id, textContent: "Basic" }),
+            div(
+                {
+                    className: style.switch,
+                    role: "switch",
+                    "aria-checked": String(Config.instance.advancedMode),
+                    onclick: () => (Config.instance.advancedMode = !Config.instance.advancedMode),
+                },
+                input({
+                    id,
+                    type: "checkbox",
+                    checked: Config.instance.advancedMode,
+                    oninput: () => (Config.instance.advancedMode = !Config.instance.advancedMode),
+                }),
+                div({ className: style.knob }),
+            ),
+            label({ htmlFor: id, textContent: "Advanced" }),
+        );
     }
 
     private leftPanel() {
@@ -141,7 +180,10 @@ export class Ribbon extends HTMLElement {
                     template: (command: CommandKeys) => QuickButton(command as any),
                 }),
                 span({ className: style.split }),
-                this.createRibbonHeader(),
+                div(
+                    { style: { display: new Binding(Config.instance, "advancedMode", new BoolToDisplay()) } },
+                    this.createRibbonHeader(),
+                ),
             ),
         );
     }

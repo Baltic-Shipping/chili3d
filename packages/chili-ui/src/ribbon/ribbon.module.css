@@ -284,3 +284,41 @@
     width: 1px;
     background-color: var(--border-color);
 }
+
+.modeToggle {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+    font-size: 12px;
+}
+
+.switch {
+    position: relative;
+    width: 44px;
+    height: 22px;
+    border-radius: 22px;
+    background: var(--button-background-color);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+}
+.switch input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+.knob {
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    width: 20px;
+    height: 20px;
+    border-radius: 20px;
+    background: var(--foreground-color);
+    transition: transform 120ms ease;
+}
+.switch input:checked + .knob {
+    transform: translateX(22px);
+}

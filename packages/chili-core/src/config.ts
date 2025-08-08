@@ -103,14 +103,13 @@ export class Config extends Observable {
     }
 
     @Serializer.serialze()
-    get showStartupRibbon() {
-        return this.getPrivateValue("showStartupRibbon", true);
+    get advancedMode() {
+        return this.getPrivateValue("advancedMode", true);
     }
-    set showStartupRibbon(value: boolean) {
-        this.setProperty("showStartupRibbon", value, () => {
-            this.saveToStorage();
-        });
+    set advancedMode(v: boolean) {
+        this.setProperty("advancedMode", v, () => this.saveToStorage());
     }
+
 
     @Serializer.serialze()
     get navigation3DIndex() {

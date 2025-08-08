@@ -1,11 +1,11 @@
-// See CHANGELOG.md for modifications (updated 2025-07-24)
+// See CHANGELOG.md for modifications (updated 2025-08-08)
 import { command, IApplication, Transaction, PubSub, DialogResult, I18nKeys, I18n } from "chili-core";
 import { form, div, label, input } from "chili-controls";
 import { BooleanNode } from "../../bodys/boolean";
 
 @command({
     key: "create.popuptube",
-    icon: "icon-cylinder",
+    icon: "icon-tube-wire",
 })
 export class PopupTubeCommand {
     async execute(application: IApplication): Promise<void> {

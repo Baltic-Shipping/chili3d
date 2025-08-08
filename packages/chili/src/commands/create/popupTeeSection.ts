@@ -1,11 +1,11 @@
-// See CHANGELOG.md for modifications (updated 2025-07-25)
+// See CHANGELOG.md for modifications (updated 2025-08-08)
 import { command, IApplication, Transaction, PubSub, DialogResult, I18nKeys, I18n, XYZ } from "chili-core";
 import { form, div, label, input } from "chili-controls";
 import { BooleanNode } from "../../bodys/boolean";
 
 @command({
     key: "create.popupTeeSection",
-    icon: "icon-cylinder",
+    icon: "icon-tbeam-wire",
 })
 export class PopupTeeSectionCommand {
     async execute(application: IApplication): Promise<void> {

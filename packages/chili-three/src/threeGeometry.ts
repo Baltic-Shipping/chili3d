@@ -19,9 +19,10 @@ import {
     ISubEdgeShape,
     VisualConfig,
     getCurrentApplication,
+    XYZ,
 } from "chili-core";
 import { MeshUtils } from "chili-geo";
-import { Material, Mesh, MeshLambertMaterial } from "three";
+import { Material, Mesh, MeshLambertMaterial, Raycaster, Vector3 } from "three";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial";
 import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2";
 import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry";
@@ -33,7 +34,8 @@ import { ThreeVisualContext } from "./threeVisualContext";
 import { ThreeVisualObject } from "./threeVisualObject";
 
 export class ThreeGeometry extends ThreeVisualObject implements IVisualGeometry {
-    private _edgeLabels: IDisposable[] = [];
+    private _edgeLabels: { midLocal: XYZ; text: string; disp?: IDisposable }[] = [];
+    private _edgeLabelRaf?: number;
     private _faceMaterial: Material | Material[];
     private _edges?: LineSegments2;
     private _faces?: Mesh;
@@ -84,6 +86,9 @@ export class ThreeGeometry extends ThreeVisualObject implements IVisualGeometry 
         const edges = mesh?.edges;
         if (!edges || !edges.range?.length) return;
 
+        this._edgeLabels.forEach(x => x.disp?.dispose());
+        this._edgeLabels.length = 0;
+
         const view = getCurrentApplication()?.activeView;
         if (!view) return;
 
@@ -97,13 +102,108 @@ export class ThreeGeometry extends ThreeVisualObject implements IVisualGeometry 
 
             const s = e.curve.startPoint();
             const t = e.curve.endPoint();
-            const mid = s.add(t).multiply(0.5);
+            const midLocal = s.add(t).multiply(0.5);
+            const text = e.length().toFixed(2) + " mm";
 
-            const disp = view.htmlText(e.length().toFixed(2), mid, { hideDelete: true });
-            this._edgeLabels.push(disp);
-
+            this._edgeLabels.push({ midLocal, text });
             e.dispose();
         }
+
+        this.refreshEdgeLabels();
+        this.ensureLabelVisLoop();
+    }
+
+    private refreshEdgeLabels() {
+        const view = getCurrentApplication()?.activeView;
+        if (!view) return;
+
+        const selfObjs = (this as any).wholeVisual?.() as any[] | undefined;
+        const root = selfObjs && selfObjs[0];
+        if (!root || !root.matrixWorld) return;
+
+        const seen = new Set<string>();
+
+        for (const lbl of this._edgeLabels) {
+            const v = new Vector3(lbl.midLocal.x, lbl.midLocal.y, lbl.midLocal.z).applyMatrix4(root.matrixWorld);
+            const midWorld = new XYZ(v.x, v.y, v.z);
+
+            const occluded = this.isOccluded(midWorld);
+            const unique = !seen.has(lbl.text);
+
+            if (!occluded && unique) {
+            if (lbl.disp && (lbl.disp as any).setPosition) {
+                (lbl.disp as any).setPosition(midWorld);
+            } else {
+                if (lbl.disp) lbl.disp.dispose();
+                lbl.disp = view.htmlText(lbl.text, midWorld, { hideDelete: true });
+            }
+            seen.add(lbl.text);
+            } else if (lbl.disp) {
+            lbl.disp.dispose();
+            lbl.disp = undefined;
+            }
+        }
+        }
+
+    private ensureLabelVisLoop() {
+        if (this._edgeLabelRaf) return;
+        const view = getCurrentApplication()?.activeView;
+        if (!view) return;
+
+        let lastKey = "";
+
+        const tick = () => {
+            if (view.isClosed) {
+            this._edgeLabelRaf = undefined;
+            return;
+            }
+
+            const p = view.cameraController.cameraPosition;
+            const t = view.cameraController.cameraTarget;
+            const camKey = `${p.x.toFixed(2)},${p.y.toFixed(2)},${p.z.toFixed(2)}|${t.x.toFixed(2)},${t.y.toFixed(2)},${t.z.toFixed(2)}|${view.mode}`;
+
+            const selfObjs = (this as any).wholeVisual?.() as any[] | undefined;
+            const root = selfObjs && selfObjs[0];
+            const mw = root?.matrixWorld?.elements as number[] | undefined;
+            const objKey = mw ? mw.map(n => n.toFixed(3)).join(",") : "";
+
+            const key = camKey + "#" + objKey;
+
+            if (key !== lastKey) {
+            lastKey = key;
+            this.refreshEdgeLabels();
+            }
+
+            this._edgeLabelRaf = requestAnimationFrame(tick) as any;
+        };
+
+        this._edgeLabelRaf = requestAnimationFrame(tick) as any;
+        }
+
+    private isOccluded(mid: XYZ) {
+        const view = getCurrentApplication()?.activeView;
+        if (!view) return false;
+
+        const origin = new Vector3(view.cameraController.cameraPosition.x, view.cameraController.cameraPosition.y, view.cameraController.cameraPosition.z);
+        const target = new Vector3(mid.x, mid.y, mid.z);
+        const dir = target.clone().sub(origin).normalize();
+        const dist = origin.distanceTo(target);
+
+        const raycaster = new Raycaster(origin, dir, 0.001, Math.max(0, dist - 0.5));
+        raycaster.layers.disableAll();
+        raycaster.layers.enable(Constants.Layers.Solid);
+
+        const occluders: any[] = [];
+        this.context.visuals().forEach(v => {
+            const objs = (v as any).wholeVisual?.() as any[] | undefined;
+            if (!objs) return;
+            for (const o of objs) {
+                if ((o as any).layers?.test && (o as any).layers.test(raycaster.layers)) occluders.push(o);
+            }
+        });
+
+        const hits = raycaster.intersectObjects(occluders, false);
+        return hits.length > 0;
     }
 
     private generateShape() {
@@ -114,8 +214,10 @@ export class ThreeGeometry extends ThreeVisualObject implements IVisualGeometry 
     }
 
     private disposeEdgeLabels() {
-        this._edgeLabels.forEach(d => d.dispose());
+        this._edgeLabels.forEach(x => x.disp?.dispose());
         this._edgeLabels.length = 0;
+        if (this._edgeLabelRaf) cancelAnimationFrame(this._edgeLabelRaf);
+        this._edgeLabelRaf = undefined;
     }
 
     override dispose() {

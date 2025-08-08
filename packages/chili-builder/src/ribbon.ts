@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-08-07)
+// See CHANGELOG.md for modifications (updated 2025-08-08)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -63,67 +63,11 @@ export const DefaultRibbon: RibbonTab[] = [
                 items: [["measure.length", "measure.angle", "measure.select"]],
             },
             {
-                groupName: "ribbon.group.act",
-                items: ["act.alignCamera"],
-            },
-            {
                 groupName: "ribbon.group.importExport",
                 items: ["file.export"],
             },
         ],
     },
-    {
-        tabName: "ribbon.tab.draw",
-        groups: [
-            {
-                groupName: "ribbon.group.2d",
-                items: [
-                    "create.line",
-                    "create.rect",
-                    "create.circle",
-                    "create.arc",
-                    "create.ellipse",
-                    "create.polygon",
-                    "create.bezier",
-                ],
-            },
-            {
-                groupName: "ribbon.group.3d",
-                items: [
-                    "create.box",
-                    "create.pyramid",
-                    "create.cylinder",
-                    "create.cone",
-                    "create.sphere",
-                    "create.thickSolid",
-                ],
-            },
-        ],
-    },
-    {
-        tabName: "ribbon.tab.tools",
-        groups: [
-            {
-                groupName: "ribbon.group.modify",
-                items: [
-                    "modify.break",
-                    "modify.trim",
-                    "modify.fillet",
-                    "modify.chamfer",
-                    "modify.removeFeature",
-                ],
-            },
-            {
-                groupName: "ribbon.group.tools",
-                items: ["create.section", "modify.split", "convert.toWire", "convert.toFace"],
-            },
-            {
-                groupName: "ribbon.group.act",
-                items: ["act.alignCamera"],
-            },
-        ],
-    },
-
     {
         tabName: "ribbon.tab.templates",
         groups: [

@@ -1,4 +1,4 @@
-/* See CHANGELOG.md for modifications (updated 2025-08-07) */
+/* See CHANGELOG.md for modifications (updated 2025-08-08) */
 .root {
     width: 100%;
     height: 100%;
@@ -114,3 +114,16 @@
     z-index: 10;
 }
 
+.advancedToggle {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--statusbar-background-color);
+}

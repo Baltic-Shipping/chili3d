@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-08-08)
+// See CHANGELOG.md for modifications (updated 2025-08-11)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -89,6 +89,22 @@ export class Config extends Observable {
     }
     set dynamicWorkplane(value: boolean) {
         this.setProperty("dynamicWorkplane", value);
+    }
+
+    @Serializer.serialze()
+    get showSelectionConfirm() {
+        return this.getPrivateValue("showSelectionConfirm", false);
+    }
+    set showSelectionConfirm(v: boolean) {
+        this.setProperty("showSelectionConfirm", v, () => this.saveToStorage());
+    }
+
+    @Serializer.serialze()
+    get autoConfirmSelection() {
+        return this.getPrivateValue("autoConfirmSelection", true);
+    }
+    set autoConfirmSelection(v: boolean) {
+        this.setProperty("autoConfirmSelection", v, () => this.saveToStorage());
     }
 
     @Serializer.serialze()

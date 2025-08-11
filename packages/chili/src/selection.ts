@@ -1,3 +1,4 @@
+// See CHANGELOG.md for modifications (updated 2025-08-11)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -14,6 +15,7 @@ import {
     IShapeFilter,
     Logger,
     PubSub,
+    Config,
     ShapeNode,
     ShapeType,
     VisualNode,
@@ -69,7 +71,21 @@ export class Selection implements ISelection, IDisposable {
         this.document.visual.eventHandler = handler;
         PubSub.default.pub("viewCursor", cursor);
         PubSub.default.pub("statusBarTip", prompt);
-        if (showControl) PubSub.default.pub("showSelectionControl", controller);
+
+        const shouldShow = showControl && Config.instance.showSelectionConfirm;
+        if (shouldShow) PubSub.default.pub("showSelectionControl", controller);
+
+        let autoHandler: any;
+        const shouldAuto = Config.instance.autoConfirmSelection && !shouldShow;
+        if (shouldAuto) {
+            autoHandler = (doc: IDocument, selected: INode[]) => {
+                if (selected && selected.length > 0) {
+                    PubSub.default.remove("selectionChanged", autoHandler);
+                    controller.success();
+                }
+            };
+            PubSub.default.sub("selectionChanged", autoHandler);
+        }
 
         try {
             await new Promise((resolve, reject) => {
@@ -79,10 +95,11 @@ export class Selection implements ISelection, IDisposable {
         } catch (e) {
             Logger.debug("pick status: ", e);
         } finally {
-            if (showControl) PubSub.default.pub("clearSelectionControl");
-            PubSub.default.pub("clearStatusBarTip");
+            if (autoHandler) PubSub.default.remove("selectionChanged", autoHandler);
             this.document.visual.eventHandler = oldHandler;
-            PubSub.default.pub("viewCursor", "default");
+            PubSub.default.pub("viewCursor", "select.default");
+            PubSub.default.pub("clearStatusBarTip");
+            PubSub.default.pub("clearSelectionControl");
         }
     }
 

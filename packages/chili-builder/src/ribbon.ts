@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-08-08)
+// See CHANGELOG.md for modifications (updated 2025-08-11)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -29,7 +29,7 @@ export const DefaultRibbon: RibbonTab[] = [
                     ["modify.split", "modify.break", "modify.trim"],
                     ["modify.fillet", "modify.chamfer", "modify.explode"],
                     ["modify.deleteNode", "modify.removeShapes", "modify.removeFeature"],
-                    ["modify.brushAdd", "modify.brushRemove", "modify.brushClear"],
+                    ["modify.brushAdd", "modify.brushClear"],
                 ],
             },
             {

@@ -20,29 +20,17 @@ export class AddBrushCommand extends MultistepCommand {
     }
 
     protected override getSteps(): IStep[] {
-        return [new SelectShapeStep(ShapeType.Face, "prompt.select.faces")];
+        return [new SelectNodeStep("prompt.select.shape")];
     }
     protected override executeMainTask(): void {
-        const nodeMatiralMape = new Map<GeometryNode, { faceIndex: number; materialId: string }[]>();
-
-        this.stepDatas[0].shapes.forEach((x) => {
-            if (x.owner.node instanceof GeometryNode) {
-                if (!nodeMatiralMape.has(x.owner.node)) {
-                    nodeMatiralMape.set(x.owner.node, []);
+        Transaction.execute(this.document, "assign material", () => {
+            this.stepDatas[0].nodes?.forEach((x) => {
+                if (x instanceof GeometryNode) {
+                    x.clearFaceMaterial();
+                    x.materialId = this.materialId;
                 }
-                nodeMatiralMape.get(x.owner.node)!.push({
-                    faceIndex: (x.shape as ISubFaceShape).index,
-                    materialId: this.materialId,
-                });
-            }
-        });
-
-        Transaction.execute(this.document, "add face material", () => {
-            nodeMatiralMape.forEach((value, key) => {
-                key.addFaceMaterial(value);
             });
         });
-
         this.document.visual.update();
     }
 }
@@ -84,18 +72,20 @@ export class RemoveBrushCommand extends MultistepCommand {
 })
 export class ClearBrushCommand extends MultistepCommand {
     protected override getSteps(): IStep[] {
-        return [new SelectShapeStep(ShapeType.Face, "prompt.select.faces")];
+        return [new SelectNodeStep("prompt.select.shape")];
     }
 
     protected override executeMainTask(): void {
-        Transaction.execute(this.document, "clear face material", () => {
+        Transaction.execute(this.document, "clear material", () => {
+            const defaultId = this.document.materials.at(0)?.id;
             this.stepDatas[0].nodes?.forEach((x) => {
                 if (x instanceof GeometryNode) {
+                    if (defaultId) x.materialId = defaultId;
                     x.clearFaceMaterial();
                 }
             });
         });
-
         this.document.visual.update();
     }
+
 }

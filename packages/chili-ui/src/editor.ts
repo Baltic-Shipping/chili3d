@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-08-07)
+// See CHANGELOG.md for modifications (updated 2025-08-11)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -12,6 +12,10 @@ import {
     I18nKeys,
     IApplication,
     IDocument,
+    INode,
+    IView,
+    GeometryNode,
+    Property,
     Material,
     PubSub,
     RibbonTab,
@@ -21,6 +25,7 @@ import { OKCancel } from "./okCancel";
 import { ProjectView } from "./project";
 import { PropertyView } from "./property";
 import { MaterialDataContent, MaterialEditor } from "./property/material";
+import { MaterialProperty } from "./property/materialProperty";
 import { Ribbon, RibbonDataContent } from "./ribbon";
 import { RibbonTabData } from "./ribbon/ribbonData";
 import { Statusbar } from "./statusbar";
@@ -36,6 +41,8 @@ export class Editor extends HTMLElement {
     private _isResizingSidebar: boolean = false;
     private _templateSidebarEl: HTMLDivElement | null = null;
     private _sidebarEl: HTMLDivElement | null = null;
+    private _materialExpander?: Expander;
+    private _materialPanel?: HTMLDivElement;
 
     constructor(app: IApplication, tabs: RibbonTab[]) {
         super();
@@ -55,6 +62,31 @@ export class Editor extends HTMLElement {
         this.render();
         document.body.appendChild(this);
     }
+
+    private readonly _updateMaterialSection = (document: IDocument, nodes: INode[]) => {
+        if (!this._materialPanel) return;
+        while (this._materialPanel.lastElementChild) this._materialPanel.removeChild(this._materialPanel.lastElementChild);
+        const geomNodes = nodes.filter((n): n is GeometryNode => n instanceof GeometryNode);
+        if (geomNodes.length === 0) return;
+        const prop = Property.getProperty(GeometryNode.prototype, "materialId");
+        if (!prop) return;
+        this._materialPanel.append(new MaterialProperty(document, geomNodes, prop));
+        };
+
+        private readonly _onShowPropertiesForMaterial = (document: IDocument, nodes: INode[]) => {
+        this._updateMaterialSection(document, nodes);
+        };
+
+        private readonly _onActiveViewChangedForMaterial = (view: IView | undefined) => {
+        if (!view) {
+            if (!this._materialPanel) return;
+            while (this._materialPanel.lastElementChild) this._materialPanel.removeChild(this._materialPanel.lastElementChild);
+            return;
+        }
+        const nodes = view.document.selection.getSelectedNodes();
+        this._updateMaterialSection(view.document, nodes);
+        };
+
 
     private render() {
         const templateCommands: CommandKeys[] = [
@@ -81,25 +113,10 @@ export class Editor extends HTMLElement {
             btn.removeAttribute('title');
             contentPanel.append(btn);
         });
-        const materialCommands = [
-            "modify.brushAdd",
-            "modify.brushClear",
-        ] as const satisfies readonly CommandKeys[];
-
         const materialExpander = new Expander("sidebar.material" as I18nKeys);
-        const materialPanel = materialExpander.contenxtPanel;
-        materialPanel.classList.add(style.templateGrid);
-
-        materialCommands.forEach((cmd) => {
-            const btn = RibbonButton.fromCommandName(cmd, ButtonSize.large);
-            if (!btn) return;
-        const tooltip = btn.textContent?.trim() || '';
-            btn.classList.add(style.hasTooltip);
-            btn.setAttribute('data-tooltip', tooltip);
-            btn.querySelectorAll('span, label').forEach(el => el.remove());
-            btn.removeAttribute('title');
-            materialPanel.append(btn);
-        });
+        const materialPanel = materialExpander.contenxtPanel as HTMLDivElement;
+        this._materialExpander = materialExpander;
+        this._materialPanel = materialPanel;
         this._templateSidebarEl = div(
             { 
                 className: style.sidebar, style: `width: ${this._sidebarWidth}px; overflow-y: auto;` 
@@ -160,12 +177,18 @@ export class Editor extends HTMLElement {
         PubSub.default.sub("showSelectionControl", this.showSelectionControl);
         PubSub.default.sub("editMaterial", this._handleMaterialEdit);
         PubSub.default.sub("clearSelectionControl", this.clearSelectionControl);
+
+        PubSub.default.sub("showProperties", this._onShowPropertiesForMaterial);
+        PubSub.default.sub("activeViewChanged", this._onActiveViewChangedForMaterial);
     }
 
     disconnectedCallback(): void {
         PubSub.default.remove("showSelectionControl", this.showSelectionControl);
         PubSub.default.remove("editMaterial", this._handleMaterialEdit);
         PubSub.default.remove("clearSelectionControl", this.clearSelectionControl);
+
+        PubSub.default.remove("showProperties", this._onShowPropertiesForMaterial);
+        PubSub.default.remove("activeViewChanged", this._onActiveViewChangedForMaterial);
     }
 
     private readonly showSelectionControl = (controller: AsyncController) => {

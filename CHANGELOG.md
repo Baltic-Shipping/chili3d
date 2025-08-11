@@ -19,4 +19,4 @@
 **2025-08-07**  - add templates panel on the left side of the editor, improve expander usability
 **2025-08-08**  - make it so line length is always displayed, add icons, make templates editable through properties, simplify UI
 **2025-08-08**  - remove data collection
-**2025-08-11**  - remove confirm dialog
+**2025-08-11**  - remove confirm dialog, allow canceling commands with right click

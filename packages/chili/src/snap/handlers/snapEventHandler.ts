@@ -1,3 +1,4 @@
+// See CHANGELOG.md for modifications (updated 2025-08-11)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -209,6 +210,12 @@ export abstract class SnapEventHandler<D extends SnapData = SnapData> implements
     }
 
     pointerDown(view: IView, event: PointerEvent): void {
+        if (event.pointerType === "mouse" && event.button === 2) {
+            this._snaped = undefined;
+            this.handleCancel();
+            view.update();
+            return;
+        }
         if (event.pointerType === "mouse" && event.button === 0) {
             if (this._snaped) {
                 this.handleSuccess();

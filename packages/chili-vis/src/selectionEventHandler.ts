@@ -1,3 +1,4 @@
+// See CHANGELOG.md for modifications (updated 2025-08-11)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -72,6 +73,13 @@ export abstract class SelectionHandler implements IEventHandler {
 
     pointerDown(view: IView, event: PointerEvent): void {
         event.preventDefault();
+        if (event.button === 2) {
+            if (this.controller) this.controller.cancel();
+            else this.clearSelected(view.document.visual.document);
+            this.cleanHighlights();
+            view.update();
+            return;
+        }
         if (event.button === 0 && event.isPrimary) {
             this.mouse = { isDown: true, x: event.offsetX, y: event.offsetY };
             if (this.multiMode && this.showRect) {

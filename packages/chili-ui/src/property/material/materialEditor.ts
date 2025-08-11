@@ -1,3 +1,4 @@
+// See CHANGELOG.md for modifications (updated 2025-08-11)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -42,8 +43,6 @@ export class MaterialEditor extends HTMLElement {
             { className: style.root },
             this.titleSection(),
             this.materialsCollection(),
-            this.editingControl,
-            this.buttons(),
         );
     }
 
@@ -51,9 +50,6 @@ export class MaterialEditor extends HTMLElement {
         return div(
             { className: style.title },
             span({ textContent: new Localize("common.material") }),
-            this.iconButton("icon-plus", () => this.dataContent.addMaterial()),
-            this.iconButton("icon-clone", () => this.dataContent.copyMaterial()),
-            this.iconButton("icon-trash", () => this.dataContent.deleteMaterial()),
         );
     }
 
@@ -80,9 +76,6 @@ export class MaterialEditor extends HTMLElement {
                 backgroundSize: "contain",
             },
             onclick: () => {
-                this.dataContent.editingMaterial = material;
-            },
-            ondblclick: () => {
                 this.dataContent.callback(material);
                 this.remove();
             },

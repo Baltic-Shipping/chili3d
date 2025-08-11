@@ -1,4 +1,3 @@
-// See CHANGELOG.md for modifications (updated 2025-08-08)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -52,10 +51,8 @@ export class ThreeViewHandler implements IEventHandler {
     }
 
     private handleMouseMove(view: IView, event: PointerEvent) {
-        if (Config.instance.navigation3DIndex !== Navigation3D.Nav3DType.Simple) {
-            if (event.buttons !== MOUSE_MIDDLE) return;
-        } else {
-            if (event.buttons === 0) return;
+        if (event.buttons !== MOUSE_MIDDLE) {
+            return;
         }
 
         let dx = 0;
@@ -73,7 +70,7 @@ export class ThreeViewHandler implements IEventHandler {
         } else if (navigatioMap.rotate === key && this.canRotate) {
             view.cameraController.rotate(dx, dy);
         }
-        
+
         if (dx !== 0 && dy !== 0) this._lastDown = undefined;
     }
 
@@ -155,26 +152,19 @@ export class ThreeViewHandler implements IEventHandler {
     }
 
     private handleMouseDown(event: PointerEvent, view: IView) {
-        if (Config.instance.navigation3DIndex === Navigation3D.Nav3DType.Simple) {
-            if (event.buttons === 1 || event.buttons === 2) {
-                if (event.shiftKey) view.cameraController.startRotate(event.offsetX, event.offsetY);
-                this._lastDown = { time: Date.now(), key: event.buttons };
-                this._offsetPoint = { x: event.offsetX, y: event.offsetY };
-                return;
-            }
-        }
-
         if (this._lastDown && this._lastDown.time + 500 > Date.now() && event.buttons === MOUSE_MIDDLE) {
             this._lastDown = undefined;
             view.cameraController.fitContent();
             view.update();
         } else if (event.buttons === MOUSE_MIDDLE) {
             view.cameraController.startRotate(event.offsetX, event.offsetY);
-            this._lastDown = { time: Date.now(), key: event.buttons };
+            this._lastDown = {
+                time: Date.now(),
+                key: event.buttons,
+            };
             this._offsetPoint = { x: event.offsetX, y: event.offsetY };
         }
     }
-
 
     private clearTimeout() {
         if (this._clearDownId) {

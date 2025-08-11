@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-08-07)
+// See CHANGELOG.md for modifications (updated 2025-08-11)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -99,9 +99,9 @@ export default {
         "command.measure.select": "Select",
         "command.modify.array": "Array",
         "command.modify.break": "Break",
-        "command.modify.brushAdd": "Brush Add",
+        "command.modify.brushAdd": "Assign Material",
         "command.modify.brushRemove": "Brush Remove",
-        "command.modify.brushClear": "Brush Clear",
+        "command.modify.brushClear": "Clear Material",
         "command.modify.chamfer": "Chamfer",
         "command.modify.deleteNode": "Delete Node",
         "command.modify.explode": "Explode",
@@ -274,6 +274,7 @@ export default {
         "ribbon.tab.tools": "Tools",
         "ribbon.tab.startup": "Startup",
         "ribbon.tab.templates": "Templates",
+        "sidebar.material": "Material",
         "snap.center": "Center",
         "snap.end": "End",
         "snap.intersection": "Intersection",

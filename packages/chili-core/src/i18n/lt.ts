@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-08-07)
+// See CHANGELOG.md for modifications (updated 2025-08-11)
 import { Locale } from "./i18n";
 
 export default {
@@ -96,9 +96,9 @@ export default {
         "command.measure.select": "Pasirinkti",
         "command.modify.array": "Masyvas",
         "command.modify.break": "Atskirti",
-        "command.modify.brushAdd": "Dažyti",
+        "command.modify.brushAdd": "Priskirti medžiagą",
         "command.modify.brushRemove": "Šalinti dažus",
-        "command.modify.brushClear": "Išvalyti dažus",
+        "command.modify.brushClear": "Pašalinti medžiagą",
         "command.modify.chamfer": "Nuožulna",
         "command.modify.deleteNode": "Ištrinti mazgą",
         "command.modify.explode": "Išardyti",
@@ -271,6 +271,7 @@ export default {
         "ribbon.tab.tools": "Įrankiai",
         "ribbon.tab.startup": "Pradžia",
         "ribbon.tab.templates": "Šablonai",
+        "sidebar.material": "Medžiaga",
         "snap.center": "Centras",
         "snap.end": "Pabaiga",
         "snap.intersection": "Sankirtis",

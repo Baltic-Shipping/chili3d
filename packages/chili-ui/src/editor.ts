@@ -81,11 +81,31 @@ export class Editor extends HTMLElement {
             btn.removeAttribute('title');
             contentPanel.append(btn);
         });
+        const materialCommands = [
+            "modify.brushAdd",
+            "modify.brushClear",
+        ] as const satisfies readonly CommandKeys[];
+
+        const materialExpander = new Expander("sidebar.material" as I18nKeys);
+        const materialPanel = materialExpander.contenxtPanel;
+        materialPanel.classList.add(style.templateGrid);
+
+        materialCommands.forEach((cmd) => {
+            const btn = RibbonButton.fromCommandName(cmd, ButtonSize.large);
+            if (!btn) return;
+        const tooltip = btn.textContent?.trim() || '';
+            btn.classList.add(style.hasTooltip);
+            btn.setAttribute('data-tooltip', tooltip);
+            btn.querySelectorAll('span, label').forEach(el => el.remove());
+            btn.removeAttribute('title');
+            materialPanel.append(btn);
+        });
         this._templateSidebarEl = div(
             { 
                 className: style.sidebar, style: `width: ${this._sidebarWidth}px; overflow-y: auto;` 
             },
-            templatesExpander
+            templatesExpander,
+            materialExpander
         );
 
         this._sidebarEl = div(

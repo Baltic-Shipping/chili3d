@@ -84,7 +84,7 @@ export class RemoveBrushCommand extends MultistepCommand {
 })
 export class ClearBrushCommand extends MultistepCommand {
     protected override getSteps(): IStep[] {
-        return [new SelectNodeStep("prompt.select.shape", { multiple: true, keepSelection: true })];
+        return [new SelectShapeStep(ShapeType.Face, "prompt.select.faces")];
     }
 
     protected override executeMainTask(): void {

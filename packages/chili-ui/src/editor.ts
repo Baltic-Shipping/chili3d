@@ -347,6 +347,7 @@ export class Editor extends HTMLElement {
         const depthIn = parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-depth")!.value) || 0;
 
         const bb = node.boundingBox();
+        if (!bb) { if (this._applyBtn) this._applyBtn.disabled = false; return; }
         const bodyCenter = new XYZ((bb.min.x + bb.max.x) / 2, (bb.min.y + bb.max.y) / 2, (bb.min.z + bb.max.z) / 2);
         const toBody = bodyCenter.add(center.multiply(-1));
         const n = plane.normal.normalize()!;

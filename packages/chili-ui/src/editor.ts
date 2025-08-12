@@ -61,6 +61,8 @@ export class Editor extends HTMLElement {
     private _cutoutNode?: ShapeNode;
     private _cutoutPlane?: Plane;
     private _cutoutHintEl?: HTMLElement;
+    private _cutoutActive = false;
+    private _applyBtn?: HTMLButtonElement;
 
     constructor(app: IApplication, tabs: RibbonTab[]) {
         super();
@@ -176,11 +178,13 @@ export class Editor extends HTMLElement {
     }
 
     private async startCutoutFlow() {
+        if (this._cutoutActive) return;
         const app = getCurrentApplication();
         const view = app?.activeView;
         if (!view) return;
         const doc = view.document;
 
+        this._cutoutActive = true;
         this.clearCutoutUI();
 
         if (this._cutoutPanel) {
@@ -198,6 +202,8 @@ export class Editor extends HTMLElement {
         PubSub.default.pub("viewCursor", "default");
         if (!shapes || shapes.length === 0) {
             if (this._cutoutHintEl) { this._cutoutHintEl.remove(); this._cutoutHintEl = undefined; }
+            this._cutoutActive = false;
+            this.resetCutoutPanel();
             return;
         }
 
@@ -245,8 +251,8 @@ export class Editor extends HTMLElement {
         const depth = input({ id: "cut-depth", type: "number", value: "10", min: "0", step: "0.1" });
         const through = input({ id: "cut-through", type: "checkbox", checked: true });
 
-        const applyBtn = button({ textContent: "Apply", onclick: () => this.applyCutout() });
-        const cancelBtn = button({ textContent: "Cancel", onclick: () => this.clearCutoutUI() });
+        this._applyBtn = button({ textContent: "Apply", onclick: () => this.applyCutout() });
+        const cancelBtn = button({ textContent: "Cancel", onclick: () => this.cancelCutout() });
 
         const onChange = () => {
             const t = (typeSel as HTMLSelectElement).value;
@@ -274,7 +280,7 @@ export class Editor extends HTMLElement {
             hRow,
             div({}, label({ textContent: "Depth" }), depth),
             div({}, label({ textContent: "Through" }), through),
-            div({}, applyBtn, cancelBtn),
+            div({}, this._applyBtn, cancelBtn),
         );
 
         onChange();
@@ -322,7 +328,8 @@ export class Editor extends HTMLElement {
     }
 
     private applyCutout() {
-        if (!this._cutoutNode || !this._cutoutPlane) return;
+        if (!this._cutoutNode || !this._cutoutPlane || !this._cutoutPanel) return;
+        if (this._applyBtn) this._applyBtn.disabled = true;
 
         const app = getCurrentApplication();
         const view = app?.activeView;
@@ -330,38 +337,45 @@ export class Editor extends HTMLElement {
 
         const node = this._cutoutNode;
         const plane = this._cutoutPlane;
-        const panel = this._cutoutPanel!;
         const sf = app.shapeFactory;
 
-        const cx = parseFloat(panel.querySelector<HTMLInputElement>("#cut-cx")!.value) || 0;
-        const cy = parseFloat(panel.querySelector<HTMLInputElement>("#cut-cy")!.value) || 0;
+        const cx = parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-cx")!.value) || 0;
+        const cy = parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-cy")!.value) || 0;
         const center = plane.origin.add(plane.xvec.multiply(cx)).add(plane.yvec.multiply(cy));
-        const through = panel.querySelector<HTMLInputElement>("#cut-through")!.checked;
-        const depthIn = parseFloat(panel.querySelector<HTMLInputElement>("#cut-depth")!.value) || 0;
 
-        const span = this.projectSpanAlong(node, plane.normal.normalize()!);
-        const depth = through ? span + 2 : Math.max(0.1, depthIn);
+        const through = this._cutoutPanel.querySelector<HTMLInputElement>("#cut-through")!.checked;
+        const depthIn = parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-depth")!.value) || 0;
+
+        const bb = node.boundingBox();
+        const bodyCenter = new XYZ((bb.min.x + bb.max.x) / 2, (bb.min.y + bb.max.y) / 2, (bb.min.z + bb.max.z) / 2);
+        const toBody = bodyCenter.add(center.multiply(-1));
         const n = plane.normal.normalize()!;
+        const inward = n.dot(toBody) >= 0 ? n : n.multiply(-1);
+        const outward = inward.multiply(-1);
 
-        const t = panel.querySelector<HTMLSelectElement>("#cut-type")!.value;
+        const eps = 0.5;
+        const span = this.projectSpanAlong(node, outward);
+        const height = through ? span + 2 * eps : Math.max(0.1, depthIn);
+
+        const t = this._cutoutPanel.querySelector<HTMLSelectElement>("#cut-type")!.value;
         let toolRes;
 
         if (t === "circle") {
-            const r = Math.max(0.1, parseFloat(panel.querySelector<HTMLInputElement>("#cut-radius")!.value) || 0);
-            const base = center.add(n.multiply(-depth * 0.5));
-            toolRes = sf.cylinder(n, base, r, depth);
+            const r = Math.max(0.1, parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-radius")!.value) || 0);
+            const base = center.add(inward.multiply(eps));
+            toolRes = sf.cylinder(inward, base, r, height);
         } else {
-            const w = Math.max(0.1, parseFloat(panel.querySelector<HTMLInputElement>("#cut-width")!.value) || 0);
-            const h = Math.max(0.1, parseFloat(panel.querySelector<HTMLInputElement>("#cut-height")!.value) || 0);
-            const origin = center.add(plane.xvec.multiply(-w * 0.5)).add(plane.yvec.multiply(-h * 0.5)).add(n.multiply(-depth * 0.5));
-            toolRes = sf.box(new Plane(origin, n, plane.xvec), w, h, depth);
+            const w = Math.max(0.1, parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-width")!.value) || 0);
+            const h = Math.max(0.1, parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-height")!.value) || 0);
+            const origin = center.add(plane.xvec.multiply(-w * 0.5)).add(plane.yvec.multiply(-h * 0.5)).add(inward.multiply(eps));
+            toolRes = sf.box(new Plane(origin, inward, plane.xvec), w, h, height);
         }
-        if (!toolRes.isOk) return;
+        if (!toolRes.isOk) { if (this._applyBtn) this._applyBtn.disabled = false; return; }
 
         const baseShape = node.shape.value;
         const cutRes = sf.booleanCut([baseShape], [toolRes.value]);
         toolRes.value.dispose?.();
-        if (!cutRes.isOk) return;
+        if (!cutRes.isOk) { if (this._applyBtn) this._applyBtn.disabled = false; return; }
 
         Transaction.execute(view.document, "cutout", () => {
             const newNode = new BooleanNode(view.document, cutRes.value);
@@ -370,7 +384,7 @@ export class Editor extends HTMLElement {
         });
 
         view.document.visual.update();
-        this.clearCutoutUI();
+        this.finishCutout();
     }
 
     private clearCutoutUI() {
@@ -477,16 +491,43 @@ export class Editor extends HTMLElement {
         this._viewportContainer.append(new MaterialEditor(context));
     };
 
+    private cancelCutout() {
+        this.finishCutout();
+    }
+
     private clearFaceHighlight() {
         const face = this._cutoutFace;
         if (!face) return;
         const doc = face.owner.node.document;
-        try {
-            doc.visual.highlighter.removeState(face.owner, VisualState.edgeHighlight, face.shape.shapeType, ...face.indexes);
-        } catch {}
-        try {
-            doc.visual.highlighter.removeState(face.owner, VisualState.edgeSelected, face.shape.shapeType, ...face.indexes);
-        } catch {}
+        try { doc.visual.highlighter.removeState(face.owner, VisualState.edgeHighlight, face.shape.shapeType, ...face.indexes); } catch {}
+        try { doc.visual.highlighter.removeState(face.owner, VisualState.edgeSelected, face.shape.shapeType, ...face.indexes); } catch {}
+    }
+
+    private clearPreview() {
+        const view = getCurrentApplication()?.activeView;
+        if (this._cutoutPreviewId !== undefined && view) {
+            view.document.visual.context.removeMesh(this._cutoutPreviewId);
+            this._cutoutPreviewId = undefined;
+        }
+    }
+
+    private resetCutoutPanel() {
+        if (!this._cutoutPanel) return;
+        while (this._cutoutPanel.firstChild) this._cutoutPanel.removeChild(this._cutoutPanel.firstChild);
+        this._cutoutPanel.append(button({ textContent: "Add", onclick: () => this.startCutoutFlow() }));
+    }
+
+    private finishCutout() {
+        this.clearPreview();
+        this.clearFaceHighlight();
+        PubSub.default.pub("clearStatusBarTip");
+        PubSub.default.pub("viewCursor", "default");
+        this._cutoutFace = undefined;
+        this._cutoutNode = undefined;
+        this._cutoutPlane = undefined;
+        this._applyBtn = undefined;
+        this._cutoutActive = false;
+        this.resetCutoutPanel();
     }
 
     registerRibbonCommand(tabName: I18nKeys, groupName: I18nKeys, command: CommandKeys | Button) {

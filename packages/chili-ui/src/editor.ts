@@ -350,20 +350,20 @@ export class Editor extends HTMLElement {
         const bb = node.boundingBox();
         if (!bb) { if (this._applyBtn) this._applyBtn.disabled = false; return; }
 
-        const faceShape = this._cutoutFace!.shape as IFace;
-        const surf = faceShape.surface() as IElementarySurface;
-        const facePlane = surf.coordinates as Plane;
+        const nUnit = plane.normal.normalize();
+        if (!nUnit) { if (this._applyBtn) this._applyBtn.disabled = false; return; }
 
-        const faceOutwardRaw = faceShape.orientation() === Orientation.REVERSED
-        ? facePlane.normal.multiply(-1)
-        : facePlane.normal;
+        const bodyCenter = new XYZ(
+        (bb.min.x + bb.max.x) / 2,
+        (bb.min.y + bb.max.y) / 2,
+        (bb.min.z + bb.max.z) / 2
+        );
+        const toBody = bodyCenter.add(center.multiply(-1));
+        const inward = nUnit.dot(toBody) >= 0 ? nUnit : nUnit.multiply(-1);
+        const outward = inward.multiply(-1);
 
-        const faceOutwardUnit = faceOutwardRaw.normalize();
-        if (!faceOutwardUnit) { if (this._applyBtn) this._applyBtn.disabled = false; return; }
-
-        const inward = faceOutwardUnit.multiply(-1);
-        const eps = 0.5;
-        const span = this.projectSpanAlong(node, faceOutwardUnit);
+        const eps = through ? 0.5 : 0.0;
+        const span = this.projectSpanAlong(node, outward);
         const height = through ? span + 2 * eps : Math.max(0.1, depthIn);
 
         const t = this._cutoutPanel.querySelector<HTMLSelectElement>("#cut-type")!.value;
@@ -377,10 +377,10 @@ export class Editor extends HTMLElement {
             const w = Math.max(0.1, parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-width")!.value) || 0);
             const h = Math.max(0.1, parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-height")!.value) || 0);
             const origin = center
-                .add(facePlane.xvec.multiply(-w * 0.5))
-                .add(facePlane.yvec.multiply(-h * 0.5))
+                .add(plane.xvec.multiply(-w * 0.5))
+                .add(plane.yvec.multiply(-h * 0.5))
                 .add(inward.multiply(eps));
-            toolRes = sf.box(new Plane(origin, inward, facePlane.xvec), w, h, height);
+            toolRes = sf.box(new Plane(origin, inward, plane.xvec), w, h, height);
         }
         if (!toolRes.isOk) { if (this._applyBtn) this._applyBtn.disabled = false; return; }
 
@@ -508,12 +508,20 @@ export class Editor extends HTMLElement {
     }
 
     private clearFaceHighlight() {
+        const view = getCurrentApplication()?.activeView;
+        const highlighter = view?.document.visual.highlighter;
+        if (!highlighter) return;
+
         const face = this._cutoutFace;
-        if (!face) return;
-        const doc = face.owner.node.document;
-        try { doc.visual.highlighter.removeState(face.owner, VisualState.edgeHighlight, face.shape.shapeType, ...face.indexes); } catch {}
-        try { doc.visual.highlighter.removeState(face.owner, VisualState.edgeSelected, face.shape.shapeType, ...face.indexes); } catch {}
+        if (!face || !face.owner || !face.owner.node) {
+            highlighter.clear();
+            return;
+        }
+
+        try { highlighter.removeState(face.owner, VisualState.edgeHighlight, face.shape.shapeType, ...face.indexes); } catch {}
+        try { highlighter.removeState(face.owner, VisualState.edgeSelected, face.shape.shapeType, ...face.indexes); } catch {}
     }
+
 
     private clearPreview() {
         const view = getCurrentApplication()?.activeView;

@@ -2,7 +2,7 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { div, Expander } from "chili-controls";
+import { div, Expander, button, label, input, select, option, span } from "chili-controls";
 import { RibbonButton } from "./ribbon/ribbonButton";
 import {
     AsyncController,
@@ -17,9 +17,19 @@ import {
     GeometryNode,
     Property,
     Material,
+    ShapeNode,
+    ShapeType,
+    IFace,
+    IElementarySurface,
+    Plane,
+    XYZ,
     PubSub,
     RibbonTab,
+    VisualShapeData,
+    getCurrentApplication,
+    Transaction
 } from "chili-core";
+import { BooleanNode } from "../../chili/src/bodys/boolean";
 import style from "./editor.module.css";
 import { OKCancel } from "./okCancel";
 import { ProjectView } from "./project";
@@ -43,6 +53,12 @@ export class Editor extends HTMLElement {
     private _sidebarEl: HTMLDivElement | null = null;
     private _materialExpander?: Expander;
     private _materialPanel?: HTMLDivElement;
+    private _cutoutExpander?: Expander;
+    private _cutoutPanel?: HTMLDivElement;
+    private _cutoutPreviewId?: number;
+    private _cutoutFace?: VisualShapeData;
+    private _cutoutNode?: ShapeNode;
+    private _cutoutPlane?: Plane;
 
     constructor(app: IApplication, tabs: RibbonTab[]) {
         super();
@@ -114,12 +130,13 @@ export class Editor extends HTMLElement {
             contentPanel.append(btn);
         });
         const cutoutExpander = new Expander("templates.cutout" as I18nKeys);
-        const cutoutPanel = cutoutExpander.contenxtPanel;
-        const cutoutBtn = RibbonButton.fromCommandName("modify.cutout", ButtonSize.large);
-        if (cutoutBtn) {
-            cutoutBtn.querySelectorAll("span, label").forEach(el => el.remove());
-            cutoutPanel.append(cutoutBtn);
-        }
+        const cutoutPanel = cutoutExpander.contenxtPanel as HTMLDivElement;
+        this._cutoutExpander = cutoutExpander;
+        this._cutoutPanel = cutoutPanel;
+
+        const addBtn = button({textContent: "Add", onclick: () => this.startCutoutFlow(),});
+        cutoutPanel.append(addBtn);
+
         const materialExpander = new Expander("sidebar.material" as I18nKeys);
         const materialPanel = materialExpander.contenxtPanel as HTMLDivElement;
         this._materialExpander = materialExpander;
@@ -154,6 +171,228 @@ export class Editor extends HTMLElement {
                 new Statusbar(style.statusbar),
             ),
         );
+    }
+
+    private async startCutoutFlow() {
+        const app = getCurrentApplication();
+        const view = app?.activeView;
+        if (!view) return;
+        const doc = view.document;
+
+        this.clearCutoutUI();
+
+        doc.selection.shapeType = ShapeType.Face;
+        const controller = new AsyncController();
+        const shapes = await doc.selection.pickShape("prompt.select.face" as I18nKeys, controller, false);
+        if (!shapes || shapes.length === 0) return;
+
+        const vs = shapes[0] as VisualShapeData;
+        const node = vs.owner.node as ShapeNode;
+        const face = vs.shape as IFace;
+        const surf = face.surface() as IElementarySurface;
+        const plane = surf.coordinates as Plane;
+
+        this._cutoutFace = vs;
+        this._cutoutNode = node;
+        this._cutoutPlane = plane;
+
+        this.buildCutoutUI();
+        this.updateCutoutPreview();
+    }
+
+    private buildCutoutUI() {
+        if (!this._cutoutPanel) return;
+        while (this._cutoutPanel.firstChild) this._cutoutPanel.removeChild(this._cutoutPanel.firstChild);
+
+        const typeSel = select(
+            { id: "cut-type" },
+            option({ value: "circle", textContent: "Circle" }),
+            option({ value: "rect", textContent: "Rectangle" }),
+        );
+
+        const cx = input({ id: "cut-cx", type: "number", value: "0", step: "0.1" });
+        const cy = input({ id: "cut-cy", type: "number", value: "0", step: "0.1" });
+
+        const radRow = div({ id: "row-radius" },
+            label({ textContent: "Radius" }),
+            input({ id: "cut-radius", type: "number", value: "10", min: "0", step: "0.1" }),
+        );
+        const wRow = div({ id: "row-width" },
+            label({ textContent: "Width" }),
+            input({ id: "cut-width", type: "number", value: "20", min: "0", step: "0.1" }),
+        );
+        const hRow = div({ id: "row-height" },
+            label({ textContent: "Height" }),
+            input({ id: "cut-height", type: "number", value: "20", min: "0", step: "0.1" }),
+        );
+
+        const depth = input({ id: "cut-depth", type: "number", value: "10", min: "0", step: "0.1" });
+        const through = input({ id: "cut-through", type: "checkbox", checked: true });
+
+        const applyBtn = button({ textContent: "Apply", onclick: () => this.applyCutout() });
+        const cancelBtn = button({ textContent: "Cancel", onclick: () => this.clearCutoutUI() });
+
+        const onChange = () => {
+            const t = (typeSel as HTMLSelectElement).value;
+            (radRow as HTMLElement).style.display = t === "circle" ? "" : "none";
+            (wRow as HTMLElement).style.display = t === "rect" ? "" : "none";
+            (hRow as HTMLElement).style.display = t === "rect" ? "" : "none";
+            this.updateCutoutPreview();
+        };
+
+        typeSel.onchange = onChange;
+        (cx as HTMLInputElement).oninput = onChange;
+        (cy as HTMLInputElement).oninput = onChange;
+        (radRow.querySelector("#cut-radius") as HTMLInputElement).oninput = onChange;
+        (wRow.querySelector("#cut-width") as HTMLInputElement).oninput = onChange;
+        (hRow.querySelector("#cut-height") as HTMLInputElement).oninput = onChange;
+        (depth as HTMLInputElement).oninput = onChange;
+        (through as HTMLInputElement).onchange = onChange;
+
+        this._cutoutPanel.append(
+            div({}, label({ textContent: "Type" }), typeSel),
+            div({}, label({ textContent: "Center X" }), cx),
+            div({}, label({ textContent: "Center Y" }), cy),
+            radRow,
+            wRow,
+            hRow,
+            div({}, label({ textContent: "Depth" }), depth),
+            div({}, label({ textContent: "Through" }), through),
+            div({}, applyBtn, cancelBtn),
+        );
+
+        onChange();
+    }
+
+    private updateCutoutPreview() {
+        const app = getCurrentApplication();
+        const view = app?.activeView;
+        if (!view || !this._cutoutPlane || !this._cutoutPanel) return;
+
+        if (this._cutoutPreviewId !== undefined) {
+            view.document.visual.context.removeMesh(this._cutoutPreviewId);
+            this._cutoutPreviewId = undefined;
+        }
+
+        const plane = this._cutoutPlane;
+        const typeSel = this._cutoutPanel.querySelector<HTMLSelectElement>("#cut-type")!;
+        const cx = parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-cx")!.value) || 0;
+        const cy = parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-cy")!.value) || 0;
+        const center = plane.origin.add(plane.xvec.multiply(cx)).add(plane.yvec.multiply(cy));
+
+        const sf = app.shapeFactory;
+
+        if (typeSel.value === "circle") {
+            const r = Math.max(0.1, parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-radius")!.value) || 0);
+            const edge = sf.circle(plane.normal, center, r);
+            if (!edge.isOk) return;
+            const mesh = edge.value.mesh.edges!;
+            this._cutoutPreviewId = view.document.visual.context.displayMesh([mesh]);
+            edge.value.dispose();
+        } else {
+            const w = Math.max(0.1, parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-width")!.value) || 0);
+            const h = Math.max(0.1, parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-height")!.value) || 0);
+            const o = center.add(plane.xvec.multiply(-w * 0.5)).add(plane.yvec.multiply(-h * 0.5));
+            const faceRes = sf.rect(new Plane(o, plane.normal, plane.xvec), w, h);
+            if (!faceRes.isOk) return;
+            const wire = faceRes.value.outerWire();
+            const mesh = wire.mesh.edges!;
+            this._cutoutPreviewId = view.document.visual.context.displayMesh([mesh]);
+            wire.dispose();
+            faceRes.value.dispose();
+        }
+
+        view.update();
+    }
+
+    private applyCutout() {
+        if (!this._cutoutNode || !this._cutoutPlane) return;
+
+        const app = getCurrentApplication();
+        const view = app?.activeView;
+        if (!view) return;
+
+        const node = this._cutoutNode;
+        const plane = this._cutoutPlane;
+        const panel = this._cutoutPanel!;
+        const sf = app.shapeFactory;
+
+        const cx = parseFloat(panel.querySelector<HTMLInputElement>("#cut-cx")!.value) || 0;
+        const cy = parseFloat(panel.querySelector<HTMLInputElement>("#cut-cy")!.value) || 0;
+        const center = plane.origin.add(plane.xvec.multiply(cx)).add(plane.yvec.multiply(cy));
+        const through = panel.querySelector<HTMLInputElement>("#cut-through")!.checked;
+        const depthIn = parseFloat(panel.querySelector<HTMLInputElement>("#cut-depth")!.value) || 0;
+
+        const span = this.projectSpanAlong(node, plane.normal.normalize()!);
+        const depth = through ? span + 2 : Math.max(0.1, depthIn);
+        const n = plane.normal.normalize()!;
+
+        const t = panel.querySelector<HTMLSelectElement>("#cut-type")!.value;
+        let toolRes;
+
+        if (t === "circle") {
+            const r = Math.max(0.1, parseFloat(panel.querySelector<HTMLInputElement>("#cut-radius")!.value) || 0);
+            const base = center.add(n.multiply(-depth * 0.5));
+            toolRes = sf.cylinder(n, base, r, depth);
+        } else {
+            const w = Math.max(0.1, parseFloat(panel.querySelector<HTMLInputElement>("#cut-width")!.value) || 0);
+            const h = Math.max(0.1, parseFloat(panel.querySelector<HTMLInputElement>("#cut-height")!.value) || 0);
+            const origin = center.add(plane.xvec.multiply(-w * 0.5)).add(plane.yvec.multiply(-h * 0.5)).add(n.multiply(-depth * 0.5));
+            toolRes = sf.box(new Plane(origin, n, plane.xvec), w, h, depth);
+        }
+        if (!toolRes.isOk) return;
+
+        const baseShape = node.shape.value;
+        const cutRes = sf.booleanCut([baseShape], [toolRes.value]);
+        toolRes.value.dispose?.();
+        if (!cutRes.isOk) return;
+
+        Transaction.execute(view.document, "cutout", () => {
+            const newNode = new BooleanNode(view.document, cutRes.value);
+            node.parent?.remove(node);
+            view.document.addNode(newNode);
+        });
+
+        view.document.visual.update();
+        this.clearCutoutUI();
+    }
+
+    private clearCutoutUI() {
+        const view = getCurrentApplication()?.activeView;
+        if (this._cutoutPreviewId !== undefined && view) {
+            view.document.visual.context.removeMesh(this._cutoutPreviewId);
+            this._cutoutPreviewId = undefined;
+        }
+        this._cutoutFace = undefined;
+        this._cutoutNode = undefined;
+        this._cutoutPlane = undefined;
+        if (this._cutoutPanel) {
+            while (this._cutoutPanel.firstChild) this._cutoutPanel.removeChild(this._cutoutPanel.firstChild);
+            this._cutoutPanel.append(button({ textContent: "Add", onclick: () => this.startCutoutFlow() }));
+        }
+    }
+
+    private projectSpanAlong(node: ShapeNode, dir: XYZ) {
+        const bb = node.boundingBox();
+        if (!bb) return 1000;
+        const u = dir.normalize()!;
+        const corners = [
+            new XYZ(bb.min.x, bb.min.y, bb.min.z),
+            new XYZ(bb.max.x, bb.min.y, bb.min.z),
+            new XYZ(bb.min.x, bb.max.y, bb.min.z),
+            new XYZ(bb.min.x, bb.min.y, bb.max.z),
+            new XYZ(bb.max.x, bb.max.y, bb.min.z),
+            new XYZ(bb.max.x, bb.min.y, bb.max.z),
+            new XYZ(bb.min.x, bb.max.y, bb.max.z),
+            new XYZ(bb.max.x, bb.max.y, bb.max.z),
+        ];
+        let min = Infinity, max = -Infinity;
+        for (const c of corners) {
+            const p = u.dot(c);
+            if (p < min) min = p;
+            if (p > max) max = p;
+        }
+        return max - min;
     }
 
     private _startSidebarResize(e: MouseEvent) {

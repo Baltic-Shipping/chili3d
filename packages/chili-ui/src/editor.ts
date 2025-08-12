@@ -347,40 +347,38 @@ export class Editor extends HTMLElement {
         const through = this._cutoutPanel.querySelector<HTMLInputElement>("#cut-through")!.checked;
         const depthIn = parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-depth")!.value) || 0;
 
-        const bb = node.boundingBox();
-        if (!bb) { if (this._applyBtn) this._applyBtn.disabled = false; return; }
+        const face = this._cutoutFace!.shape as IFace;
+        const surf = face.surface() as IElementarySurface;
+        const p = surf.coordinates as Plane;
 
-        const nUnit = plane.normal.normalize();
+        const nUnit = p.normal.normalize();
         if (!nUnit) { if (this._applyBtn) this._applyBtn.disabled = false; return; }
 
-        const bodyCenter = new XYZ(
-        (bb.min.x + bb.max.x) / 2,
-        (bb.min.y + bb.max.y) / 2,
-        (bb.min.z + bb.max.z) / 2
-        );
+        const bb = node.boundingBox();
+        if (!bb) { if (this._applyBtn) this._applyBtn.disabled = false; return; }
+        const bodyCenter = new XYZ((bb.min.x + bb.max.x) / 2, (bb.min.y + bb.max.y) / 2, (bb.min.z + bb.max.z) / 2);
         const toBody = bodyCenter.add(center.multiply(-1));
         const inward = nUnit.dot(toBody) >= 0 ? nUnit : nUnit.multiply(-1);
         const outward = inward.multiply(-1);
 
         const eps = through ? 0.5 : 0.0;
         const span = this.projectSpanAlong(node, outward);
-        const height = through ? span + 2 * eps : Math.max(0.1, depthIn);
+        const H = through ? (span + 2 * eps) : Math.max(0.1, depthIn);
+
+        const centerShift = inward.multiply((through ? (H / 2) : (H / 2)) + eps);
+        const cutterCenter = center.add(centerShift);
 
         const t = this._cutoutPanel.querySelector<HTMLSelectElement>("#cut-type")!.value;
         let toolRes;
 
         if (t === "circle") {
             const r = Math.max(0.1, parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-radius")!.value) || 0);
-            const base = center.add(inward.multiply(eps));
-            toolRes = sf.cylinder(inward, base, r, height);
+            toolRes = app.shapeFactory.cylinder(inward, cutterCenter, r, H);
         } else {
             const w = Math.max(0.1, parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-width")!.value) || 0);
             const h = Math.max(0.1, parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-height")!.value) || 0);
-            const origin = center
-                .add(plane.xvec.multiply(-w * 0.5))
-                .add(plane.yvec.multiply(-h * 0.5))
-                .add(inward.multiply(eps));
-            toolRes = sf.box(new Plane(origin, inward, plane.xvec), w, h, height);
+            const planeForBox = new Plane(cutterCenter, inward, p.xvec);
+            toolRes = app.shapeFactory.box(planeForBox, w, h, H);
         }
         if (!toolRes.isOk) { if (this._applyBtn) this._applyBtn.disabled = false; return; }
 

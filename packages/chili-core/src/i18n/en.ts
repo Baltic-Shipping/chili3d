@@ -113,6 +113,7 @@ export default {
         "command.modify.rotate": "Rotate",
         "command.modify.split": "Split",
         "command.modify.trim": "Trim",
+        "command.modify.cutout": "Cut Out",
         "command.special.last": "__Last_COMMAND__",
         "command.test.performance": "Performance Test",
         "command.wechat.group": "Wechat",

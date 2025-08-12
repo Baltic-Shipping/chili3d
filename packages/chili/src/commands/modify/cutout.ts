@@ -15,7 +15,7 @@ import {
     command,
 } from "chili-core";
 import { form, div, label, input, select, option } from "chili-controls";
-import { IStep, SelectShapeStep } from "../step";
+import { IStep, SelectShapeStep } from "../../step";
 import { MultistepCommand } from "../multistepCommand";
 import { BooleanNode } from "../../bodys/boolean";
 

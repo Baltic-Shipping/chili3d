@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-07-30)
+// See CHANGELOG.md for modifications (updated 2025-08-12)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -108,6 +108,7 @@ const I18N_KEYS = [
     "command.modify.rotate",
     "command.modify.split",
     "command.modify.trim",
+    "command.modify.cutout",
     "command.special.last",
     "command.test.performance",
     "command.wechat.group",
@@ -139,6 +140,17 @@ const I18N_KEYS = [
     "common.thickness",
     "common.type",
     "common.volume",
+    "cutout.title",
+    "cutout.type",
+    "cutout.type.circle",
+    "cutout.type.rect",
+    "cutout.centerX",
+    "cutout.centerY",
+    "cutout.radius",
+    "cutout.width",
+    "cutout.height",
+    "cutout.depth",
+    "cutout.through",
     "dialog.title.selectWorkingPlane",
     "dialog.title.createBox",
     "dialog.title.createCylinder",
@@ -243,6 +255,7 @@ const I18N_KEYS = [
     "prompt.select.path",
     "prompt.select.vertexes",
     "prompt.select.wires",
+    "prompt.select.face",
     "properties.group.transform",
     "properties.header",
     "properties.multivalue",
@@ -275,6 +288,7 @@ const I18N_KEYS = [
     "snap.nearest",
     "statusBar.snap",
     "statusBar.tracking",
+    "templates.cutout",
     "toast.command.{0}excuting",
     "toast.converter.error",
     "toast.converter.invalidColor",

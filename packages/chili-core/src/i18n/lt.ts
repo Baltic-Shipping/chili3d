@@ -110,6 +110,7 @@ export default {
         "command.modify.rotate": "Pasukti",
         "command.modify.split": "Padalyti",
         "command.modify.trim": "Apipjaustyti",
+        "command.modify.cutout": "Išpjauti",
         "command.special.last": "__Paskutinė_komanda__",
         "command.test.performance": "Našumo testas",
         "command.wechat.group": "Wechat",

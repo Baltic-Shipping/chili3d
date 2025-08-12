@@ -29,6 +29,7 @@ import {
     getCurrentApplication,
     Transaction,
     VisualState,
+    Orientation
 } from "chili-core";
 import { BooleanNode } from "../../chili/src/bodys/boolean";
 import style from "./editor.module.css";
@@ -333,7 +334,7 @@ export class Editor extends HTMLElement {
 
         const app = getCurrentApplication();
         const view = app?.activeView;
-        if (!view) return;
+        if (!view) { if (this._applyBtn) this._applyBtn.disabled = false; return; }
 
         const node = this._cutoutNode;
         const plane = this._cutoutPlane;
@@ -348,14 +349,21 @@ export class Editor extends HTMLElement {
 
         const bb = node.boundingBox();
         if (!bb) { if (this._applyBtn) this._applyBtn.disabled = false; return; }
-        const bodyCenter = new XYZ((bb.min.x + bb.max.x) / 2, (bb.min.y + bb.max.y) / 2, (bb.min.z + bb.max.z) / 2);
-        const toBody = bodyCenter.add(center.multiply(-1));
-        const n = plane.normal.normalize()!;
-        const inward = n.dot(toBody) >= 0 ? n : n.multiply(-1);
-        const outward = inward.multiply(-1);
 
+        const faceShape = this._cutoutFace!.shape as IFace;
+        const surf = faceShape.surface() as IElementarySurface;
+        const facePlane = surf.coordinates as Plane;
+
+        const faceOutwardRaw = faceShape.orientation() === Orientation.REVERSED
+        ? facePlane.normal.multiply(-1)
+        : facePlane.normal;
+
+        const faceOutwardUnit = faceOutwardRaw.normalize();
+        if (!faceOutwardUnit) { if (this._applyBtn) this._applyBtn.disabled = false; return; }
+
+        const inward = faceOutwardUnit.multiply(-1);
         const eps = 0.5;
-        const span = this.projectSpanAlong(node, outward);
+        const span = this.projectSpanAlong(node, faceOutwardUnit);
         const height = through ? span + 2 * eps : Math.max(0.1, depthIn);
 
         const t = this._cutoutPanel.querySelector<HTMLSelectElement>("#cut-type")!.value;
@@ -368,8 +376,11 @@ export class Editor extends HTMLElement {
         } else {
             const w = Math.max(0.1, parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-width")!.value) || 0);
             const h = Math.max(0.1, parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-height")!.value) || 0);
-            const origin = center.add(plane.xvec.multiply(-w * 0.5)).add(plane.yvec.multiply(-h * 0.5)).add(inward.multiply(eps));
-            toolRes = sf.box(new Plane(origin, inward, plane.xvec), w, h, height);
+            const origin = center
+                .add(facePlane.xvec.multiply(-w * 0.5))
+                .add(facePlane.yvec.multiply(-h * 0.5))
+                .add(inward.multiply(eps));
+            toolRes = sf.box(new Plane(origin, inward, facePlane.xvec), w, h, height);
         }
         if (!toolRes.isOk) { if (this._applyBtn) this._applyBtn.disabled = false; return; }
 
@@ -384,8 +395,8 @@ export class Editor extends HTMLElement {
             view.document.addNode(newNode);
         });
 
-        view.document.visual.update();
         this.finishCutout();
+        view.document.visual.update();
     }
 
     private clearCutoutUI() {

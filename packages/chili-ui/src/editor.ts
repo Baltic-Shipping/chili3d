@@ -27,7 +27,8 @@ import {
     RibbonTab,
     VisualShapeData,
     getCurrentApplication,
-    Transaction
+    Transaction,
+    VisualState,
 } from "chili-core";
 import { BooleanNode } from "../../chili/src/bodys/boolean";
 import style from "./editor.module.css";
@@ -59,6 +60,7 @@ export class Editor extends HTMLElement {
     private _cutoutFace?: VisualShapeData;
     private _cutoutNode?: ShapeNode;
     private _cutoutPlane?: Plane;
+    private _cutoutHintEl?: HTMLElement;
 
     constructor(app: IApplication, tabs: RibbonTab[]) {
         super();
@@ -181,10 +183,23 @@ export class Editor extends HTMLElement {
 
         this.clearCutoutUI();
 
+        if (this._cutoutPanel) {
+            this._cutoutHintEl = div({ textContent: "Click a face…" });
+            this._cutoutPanel.append(this._cutoutHintEl);
+        }
+        PubSub.default.pub("statusBarTip", "prompt.select.face" as I18nKeys);
+        PubSub.default.pub("viewCursor", "select.default");
+
         doc.selection.shapeType = ShapeType.Face;
         const controller = new AsyncController();
         const shapes = await doc.selection.pickShape("prompt.select.face" as I18nKeys, controller, false);
-        if (!shapes || shapes.length === 0) return;
+
+        PubSub.default.pub("clearStatusBarTip");
+        PubSub.default.pub("viewCursor", "default");
+        if (!shapes || shapes.length === 0) {
+            if (this._cutoutHintEl) { this._cutoutHintEl.remove(); this._cutoutHintEl = undefined; }
+            return;
+        }
 
         const vs = shapes[0] as VisualShapeData;
         const node = vs.owner.node as ShapeNode;
@@ -196,6 +211,7 @@ export class Editor extends HTMLElement {
         this._cutoutNode = node;
         this._cutoutPlane = plane;
 
+        if (this._cutoutHintEl) { this._cutoutHintEl.remove(); this._cutoutHintEl = undefined; }
         this.buildCutoutUI();
         this.updateCutoutPreview();
     }
@@ -363,12 +379,15 @@ export class Editor extends HTMLElement {
             view.document.visual.context.removeMesh(this._cutoutPreviewId);
             this._cutoutPreviewId = undefined;
         }
+        this.clearFaceHighlight();
         this._cutoutFace = undefined;
         this._cutoutNode = undefined;
         this._cutoutPlane = undefined;
+
         if (this._cutoutPanel) {
             while (this._cutoutPanel.firstChild) this._cutoutPanel.removeChild(this._cutoutPanel.firstChild);
-            this._cutoutPanel.append(button({ textContent: "Add", onclick: () => this.startCutoutFlow() }));
+            const addBtn = button({ textContent: "Add", onclick: () => this.startCutoutFlow() });
+            this._cutoutPanel.append(addBtn);
         }
     }
 
@@ -457,6 +476,18 @@ export class Editor extends HTMLElement {
         let context = new MaterialDataContent(document, callback, editingMaterial);
         this._viewportContainer.append(new MaterialEditor(context));
     };
+
+    private clearFaceHighlight() {
+        const face = this._cutoutFace;
+        if (!face) return;
+        const doc = face.owner.node.document;
+        try {
+            doc.visual.highlighter.removeState(face.owner, VisualState.edgeHighlight, face.shape.shapeType, ...face.indexes);
+        } catch {}
+        try {
+            doc.visual.highlighter.removeState(face.owner, VisualState.edgeSelected, face.shape.shapeType, ...face.indexes);
+        } catch {}
+    }
 
     registerRibbonCommand(tabName: I18nKeys, groupName: I18nKeys, command: CommandKeys | Button) {
         const tab = this.ribbonContent.ribbonTabs.find((p) => p.tabName === tabName);

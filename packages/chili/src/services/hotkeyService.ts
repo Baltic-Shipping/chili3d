@@ -1,3 +1,4 @@
+// See CHANGELOG.md for modifications (updated 2025-08-12)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -49,9 +50,13 @@ export class HotkeyService implements IService {
     }
 
     private readonly eventHandlerKeyDown = (e: KeyboardEvent) => {
+        const t = e.target as HTMLElement | null;
+        if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || (t as any).isContentEditable || t.closest?.("input,textarea,select,[contenteditable='true']"))) {
+            return;
+        }
         e.preventDefault();
-        let visual = this.app?.activeView?.document?.visual;
-        let view = this.app?.activeView;
+        const visual = this.app?.activeView?.document?.visual;
+        const view = this.app?.activeView;
         if (view && visual) {
             visual.eventHandler.keyDown(view, e);
             visual.viewHandler.keyDown(view, e);
@@ -60,8 +65,12 @@ export class HotkeyService implements IService {
     };
 
     private readonly commandKeyDown = (e: KeyboardEvent) => {
+        const t = e.target as HTMLElement | null;
+        if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || (t as any).isContentEditable || t.closest?.("input,textarea,select,[contenteditable='true']"))) {
+            return;
+        }
         e.preventDefault();
-        let command = this.getCommand(e);
+        const command = this.getCommand(e);
         if (command !== undefined) {
             PubSub.default.pub("executeCommand", command);
         }

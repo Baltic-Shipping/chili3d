@@ -20,3 +20,4 @@
 **2025-08-08**  - make it so line length is always displayed, add icons, make templates editable through properties, simplify UI
 **2025-08-08**  - remove data collection
 **2025-08-11**  - remove confirm dialog, allow canceling commands with right click, fix brush command, add material section
+**2025-08-12**  - add cutout wizard

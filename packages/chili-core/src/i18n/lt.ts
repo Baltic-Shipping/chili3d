@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-08-11)
+// See CHANGELOG.md for modifications (updated 2025-08-12)
 import { Locale } from "./i18n";
 
 export default {
@@ -141,6 +141,17 @@ export default {
         "common.thickness": "Storis",
         "common.type": "Tipas",
         "common.volume": "Tūris",
+        "cutout.title": "Add cutout",
+        "cutout.type": "Type",
+        "cutout.type.circle": "Apskritimas",
+        "cutout.type.rect": "Stačiakampis",
+        "cutout.centerX": "Centras X",
+        "cutout.centerY": "Centras Y",
+        "cutout.radius": "Spindulys",
+        "cutout.width": "Plotis",
+        "cutout.height": "Aukštis",
+        "cutout.depth": "Gylis",
+        "cutout.through": "Per",
         "dialog.title.selectWorkingPlane": "Pasirinkite darbinę plokštumą",
         "dialog.title.createBox": "Kurti lakštą",
         "dialog.title.createCylinder": "Kurti cilindrą",
@@ -246,6 +257,7 @@ export default {
         "prompt.select.path": "Pasirinkite kelią",
         "prompt.select.vertexes": "Pasirinkite viršūnes",
         "prompt.select.wires": "Pasirinkite laidus",
+        "prompt.select.face": "Prašome pasirinkti paviršių",
         "toast.snap.notFoundValidPoint": "Nėra tinkamo taško",
         "properties.group.transform": "Transformacija",
         "properties.header": "Savybės",
@@ -280,6 +292,7 @@ export default {
         "snap.nearest": "Artimiausias",
         "statusBar.snap": "Pritraukimas",
         "statusBar.tracking": "Sekimas",
+        "templates.cutout": "Iškirpti",
         "toast.command.{0}excuting": "Vykdoma komanda {0}",
         "toast.converter.error": "Konvertavimo klaida",
         "toast.converter.invalidColor": "Spalva yra netinkama",

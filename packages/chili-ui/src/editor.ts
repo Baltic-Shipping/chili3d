@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-08-11)
+// See CHANGELOG.md for modifications (updated 2025-08-12)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -113,6 +113,13 @@ export class Editor extends HTMLElement {
             btn.removeAttribute('title');
             contentPanel.append(btn);
         });
+        const cutoutExpander = new Expander("templates.cutout" as I18nKeys);
+        const cutoutPanel = cutoutExpander.contenxtPanel;
+        const cutoutBtn = RibbonButton.fromCommandName("modify.cutout", ButtonSize.large);
+        if (cutoutBtn) {
+            cutoutBtn.querySelectorAll("span, label").forEach(el => el.remove());
+            cutoutPanel.append(cutoutBtn);
+        }
         const materialExpander = new Expander("sidebar.material" as I18nKeys);
         const materialPanel = materialExpander.contenxtPanel as HTMLDivElement;
         this._materialExpander = materialExpander;
@@ -122,6 +129,7 @@ export class Editor extends HTMLElement {
                 className: style.sidebar, style: `width: ${this._sidebarWidth}px; overflow-y: auto;` 
             },
             templatesExpander,
+            cutoutExpander,
             materialExpander
         );
 

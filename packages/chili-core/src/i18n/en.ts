@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-08-11)
+// See CHANGELOG.md for modifications (updated 2025-08-12)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -144,6 +144,17 @@ export default {
         "common.thickness": "Thickness",
         "common.type": "Type",
         "common.volume": "Volume",
+        "cutout.title": "Add cutout",
+        "cutout.type": "Type",
+        "cutout.type.circle": "Circle",
+        "cutout.type.rect": "Rectangle",
+        "cutout.centerX": "Center X",
+        "cutout.centerY": "Center Y",
+        "cutout.radius": "Radius",
+        "cutout.width": "Width",
+        "cutout.height": "Height",
+        "cutout.depth": "Depth",
+        "cutout.through": "Through",
         "dialog.title.selectWorkingPlane": "Select Working Plane",
         "dialog.title.createBox": "Create Box",
         "dialog.title.createCylinder": "Create Cylinder",
@@ -249,6 +260,7 @@ export default {
         "prompt.select.path": "Please select path",
         "prompt.select.vertexes": "Please select vertexes",
         "prompt.select.wires": "Please select wires",
+        "prompt.select.face": "Please select face",
         "toast.snap.notFoundValidPoint": "No valid point",
         "properties.group.transform": "Transform",
         "properties.header": "Properties",
@@ -283,6 +295,7 @@ export default {
         "snap.nearest": "Nearest",
         "statusBar.snap": "Snap",
         "statusBar.tracking": "Tracking",
+        "templates.cutout": "Cut out",
         "toast.command.{0}excuting": "Command {0} is runing",
         "toast.converter.error": "Converter error",
         "toast.converter.invalidColor": "The color is invalid",

@@ -21,3 +21,4 @@
 **2025-08-08**  - remove data collection
 **2025-08-11**  - remove confirm dialog, allow canceling commands with right click, fix brush command, add material section
 **2025-08-12**  - add cutout wizard
+**2025-08-13**  - cutout wizard and camera fixes

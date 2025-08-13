@@ -1,3 +1,4 @@
+// See CHANGELOG.md for modifications (updated 2025-08-13)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -162,7 +163,8 @@ export class CameraController extends Observable implements ICameraController {
         const nodes = this.view.document.selection.getSelectedNodes();
         if (nodes.length > 0) {
             for (const node of nodes) {
-                const shape = this.view.document.visual.context.getVisual(node) as ThreeVisualObject;
+                const shape = this.view.document.visual.context.getVisual(node) as ThreeVisualObject | undefined;
+                if (!shape) continue;
                 box.expandByObject(shape);
             }
             this._rotateCenter = box.getCenter(new Vector3());
@@ -253,7 +255,8 @@ export class CameraController extends Observable implements ICameraController {
 
         const box = new Box3();
         for (let shape of shapes) {
-            let threeGeometry = context.getVisual(shape) as ThreeGeometry;
+            let threeGeometry = context.getVisual(shape) as ThreeGeometry | undefined;
+            if (!threeGeometry) continue;
             let boundingBox = new Box3().setFromObject(threeGeometry);
             if (boundingBox) {
                 box.union(boundingBox);

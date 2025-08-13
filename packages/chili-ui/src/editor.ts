@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-08-12)
+// See CHANGELOG.md for modifications (updated 2025-08-13)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -290,14 +290,14 @@ export class Editor extends HTMLElement {
     private updateCutoutPreview() {
         const app = getCurrentApplication();
         const view = app?.activeView;
-        if (!view || !this._cutoutPlane || !this._cutoutPanel) return;
+        if (!view || !this._cutoutPanel || !this._cutoutFace || !this._cutoutPlane) return;
 
         if (this._cutoutPreviewId !== undefined) {
             view.document.visual.context.removeMesh(this._cutoutPreviewId);
             this._cutoutPreviewId = undefined;
         }
 
-        const plane = this._cutoutPlane;
+        const plane = this.cutPlaneWorld();
         const typeSel = this._cutoutPanel.querySelector<HTMLSelectElement>("#cut-type")!;
         const cx = parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-cx")!.value) || 0;
         const cy = parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-cy")!.value) || 0;
@@ -337,36 +337,28 @@ export class Editor extends HTMLElement {
         if (!view) { if (this._applyBtn) this._applyBtn.disabled = false; return; }
 
         const node = this._cutoutNode;
-        const plane = this._cutoutPlane;
+        const plane = this.cutPlaneWorld();
         const sf = app.shapeFactory;
-
+        const nUnit = plane.normal.normalize();
+        if (!nUnit) { if (this._applyBtn) this._applyBtn.disabled = false; return; }
+        const bb = node.boundingBox();
+        if (!bb) { if (this._applyBtn) this._applyBtn.disabled = false; return; }
         const cx = parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-cx")!.value) || 0;
         const cy = parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-cy")!.value) || 0;
-        const center = plane.origin.add(plane.xvec.multiply(cx)).add(plane.yvec.multiply(cy));
+        const centerOnFace = plane.origin.add(plane.xvec.multiply(cx)).add(plane.yvec.multiply(cy));
+        const bodyCenter = new XYZ((bb.min.x + bb.max.x) / 2, (bb.min.y + bb.max.y) / 2, (bb.min.z + bb.max.z) / 2);
+        const toBody = bodyCenter.add(centerOnFace.multiply(-1));
+        const inward = nUnit.dot(toBody) >= 0 ? nUnit : nUnit.multiply(-1);
+        const outward = inward.multiply(-1);
 
         const through = this._cutoutPanel.querySelector<HTMLInputElement>("#cut-through")!.checked;
         const depthIn = parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-depth")!.value) || 0;
-
-        const face = this._cutoutFace!.shape as IFace;
-        const surf = face.surface() as IElementarySurface;
-        const p = surf.coordinates as Plane;
-
-        const nUnit = p.normal.normalize();
-        if (!nUnit) { if (this._applyBtn) this._applyBtn.disabled = false; return; }
-
-        const bb = node.boundingBox();
-        if (!bb) { if (this._applyBtn) this._applyBtn.disabled = false; return; }
-        const bodyCenter = new XYZ((bb.min.x + bb.max.x) / 2, (bb.min.y + bb.max.y) / 2, (bb.min.z + bb.max.z) / 2);
-        const toBody = bodyCenter.add(center.multiply(-1));
-        const inward = nUnit.dot(toBody) >= 0 ? nUnit : nUnit.multiply(-1);
-        const outward = inward.multiply(-1);
 
         const eps = through ? 0.5 : 0.0;
         const span = this.projectSpanAlong(node, outward);
         const H = through ? (span + 2 * eps) : Math.max(0.1, depthIn);
 
-        const centerShift = inward.multiply((through ? (H / 2) : (H / 2)) + eps);
-        const cutterCenter = center.add(centerShift);
+        const cutterCenter = centerOnFace.add(inward.multiply(H * 0.5 + eps));
 
         const t = this._cutoutPanel.querySelector<HTMLSelectElement>("#cut-type")!.value;
         let toolRes;
@@ -377,8 +369,7 @@ export class Editor extends HTMLElement {
         } else {
             const w = Math.max(0.1, parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-width")!.value) || 0);
             const h = Math.max(0.1, parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-height")!.value) || 0);
-            const planeForBox = new Plane(cutterCenter, inward, p.xvec);
-            toolRes = app.shapeFactory.box(planeForBox, w, h, H);
+            toolRes = app.shapeFactory.box(new Plane(cutterCenter, inward, plane.xvec), w, h, H);
         }
         if (!toolRes.isOk) { if (this._applyBtn) this._applyBtn.disabled = false; return; }
 
@@ -500,6 +491,11 @@ export class Editor extends HTMLElement {
         let context = new MaterialDataContent(document, callback, editingMaterial);
         this._viewportContainer.append(new MaterialEditor(context));
     };
+
+    private cutPlaneWorld(): Plane {
+        const vs = this._cutoutFace!;
+        return this._cutoutPlane!.transformed(vs.transform);
+    }
 
     private cancelCutout() {
         this.finishCutout();

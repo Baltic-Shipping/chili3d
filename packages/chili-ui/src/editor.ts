@@ -301,7 +301,10 @@ export class Editor extends HTMLElement {
         const typeSel = this._cutoutPanel.querySelector<HTMLSelectElement>("#cut-type")!;
         const cx = parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-cx")!.value) || 0;
         const cy = parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-cy")!.value) || 0;
-        const center = plane.origin.add(plane.xvec.multiply(cx)).add(plane.yvec.multiply(cy));
+
+        const clicked = this._cutoutFace.point ?? plane.origin;
+        const anchor = plane.project(clicked);
+        const center = anchor.add(plane.xvec.multiply(cx)).add(plane.yvec.multiply(cy));
 
         const sf = app.shapeFactory;
 
@@ -337,15 +340,17 @@ export class Editor extends HTMLElement {
         if (!view) { if (this._applyBtn) this._applyBtn.disabled = false; return; }
 
         const node = this._cutoutNode;
+        const sf = app.shapeFactory
         const plane = this.cutPlaneWorld();
-        const sf = app.shapeFactory;
         const nUnit = plane.normal.normalize();
         if (!nUnit) { if (this._applyBtn) this._applyBtn.disabled = false; return; }
-        const bb = node.boundingBox();
+        const bb = this._cutoutNode.boundingBox();
         if (!bb) { if (this._applyBtn) this._applyBtn.disabled = false; return; }
+        const clicked = this._cutoutFace!.point ?? plane.origin;
+        const anchor = plane.project(clicked);
         const cx = parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-cx")!.value) || 0;
         const cy = parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-cy")!.value) || 0;
-        const centerOnFace = plane.origin.add(plane.xvec.multiply(cx)).add(plane.yvec.multiply(cy));
+        const centerOnFace = anchor.add(plane.xvec.multiply(cx)).add(plane.yvec.multiply(cy));
         const bodyCenter = new XYZ((bb.min.x + bb.max.x) / 2, (bb.min.y + bb.max.y) / 2, (bb.min.z + bb.max.z) / 2);
         const toBody = bodyCenter.add(centerOnFace.multiply(-1));
         const inward = nUnit.dot(toBody) >= 0 ? nUnit : nUnit.multiply(-1);
@@ -355,7 +360,7 @@ export class Editor extends HTMLElement {
         const depthIn = parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-depth")!.value) || 0;
 
         const eps = through ? 0.5 : 0.0;
-        const span = this.projectSpanAlong(node, outward);
+        const span = this.projectSpanAlong(this._cutoutNode, outward);
         const H = through ? (span + 2 * eps) : Math.max(0.1, depthIn);
 
         const cutterCenter = centerOnFace.add(inward.multiply(H * 0.5 + eps));

@@ -147,7 +147,7 @@ export class ThreeGeometry extends ThreeVisualObject implements IVisualGeometry 
         if (!root || !root.matrixWorld) return;
 
         const MIN_EDGE_PX = 36;
-        const MAX_VISIBLE = 60;
+        const MAX_VISIBLE = 15;
 
         const candidates: {
             idx: number;

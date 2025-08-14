@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-08-13)
+// See CHANGELOG.md for modifications (updated 2025-08-14)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -134,13 +134,28 @@ export class Editor extends HTMLElement {
             btn.removeAttribute('title');
             contentPanel.append(btn);
         });
-        const cutoutExpander = new Expander("templates.cutout" as I18nKeys);
-        const cutoutPanel = cutoutExpander.contenxtPanel as HTMLDivElement;
-        this._cutoutExpander = cutoutExpander;
-        this._cutoutPanel = cutoutPanel;
+        const cutoutSection = div({
+            id: "cutout-section",
+            style: "grid-column: 1 / -1; margin-top:12px; padding-top:12px; border-top:1px solid #ddd;"
+        },
+            div({
+                id: "cutout-header",
+                style: "font-size:16px; font-weight:700; margin-bottom:8px;"
+            }, label({ textContent: "Cut Out" })),
+            div({
+                id: "cutout-body",
+                style: "display:flex; justify-content:center; align-items:center;"
+            }, button({
+                id: "cutout-add",
+                textContent: "Add",
+                onclick: () => this.startCutoutFlow(),
+                style: "padding:10px 22px; font-size:14px; font-weight:600; border-radius:8px;"
+            }))
+        );
 
-        const addBtn = button({textContent: "Add", onclick: () => this.startCutoutFlow(),});
-        cutoutPanel.append(addBtn);
+        contentPanel.append(cutoutSection);
+
+        this._cutoutPanel = cutoutSection.querySelector("#cutout-body") as HTMLDivElement;
 
         const materialExpander = new Expander("sidebar.material" as I18nKeys);
         const materialPanel = materialExpander.contenxtPanel as HTMLDivElement;
@@ -151,7 +166,6 @@ export class Editor extends HTMLElement {
                 className: style.sidebar, style: `width: ${this._sidebarWidth}px; overflow-y: auto;` 
             },
             templatesExpander,
-            cutoutExpander,
             materialExpander
         );
 
@@ -189,7 +203,15 @@ export class Editor extends HTMLElement {
         this.clearCutoutUI();
 
         if (this._cutoutPanel) {
-            this._cutoutHintEl = div({ textContent: "Click a face…" });
+            this._cutoutPanel.style.display = "flex";
+            this._cutoutPanel.style.justifyContent = "center";
+            this._cutoutPanel.style.alignItems = "center";
+            this._cutoutPanel.style.gap = "";
+            (this._cutoutPanel.style as any).gridTemplateColumns = "";
+            (this._cutoutPanel.style as any).gridAutoRows = "";
+
+            while (this._cutoutPanel.firstChild) this._cutoutPanel.removeChild(this._cutoutPanel.firstChild);
+            this._cutoutHintEl = div({ textContent: "Click a face…", style: "padding:8px 0; opacity:0.8;" });
             this._cutoutPanel.append(this._cutoutHintEl);
         }
         PubSub.default.pub("statusBarTip", "prompt.select.face" as I18nKeys);
@@ -296,6 +318,14 @@ export class Editor extends HTMLElement {
     private buildCutoutUI() {
         if (!this._cutoutPanel) return;
         while (this._cutoutPanel.firstChild) this._cutoutPanel.removeChild(this._cutoutPanel.firstChild);
+
+        this._cutoutPanel.style.display = "grid";
+        (this._cutoutPanel.style as any).gridTemplateColumns = "max-content 1fr";
+        (this._cutoutPanel.style as any).gridAutoRows = "auto";
+        this._cutoutPanel.style.gap = "8px 12px";
+        this._cutoutPanel.style.justifyContent = "";
+        this._cutoutPanel.style.alignItems = "center";
+
         const def = this._computeCutDefaults();
 
         const typeSel = select(
@@ -306,47 +336,60 @@ export class Editor extends HTMLElement {
 
         const cx = input({ id: "cut-cx", type: "number", value: String(+def.cx.toFixed(3)), step: "0.1" });
         const cy = input({ id: "cut-cy", type: "number", value: String(+def.cy.toFixed(3)), step: "0.1" });
+        const rad = input({ id: "cut-radius", type: "number", value: String(+def.radius.toFixed(3)), min: "0", step: "0.1" });
+        const w   = input({ id: "cut-width",  type: "number", value: String(+def.rectW.toFixed(3)), min: "0", step: "0.1" });
+        const h   = input({ id: "cut-height", type: "number", value: String(+def.rectH.toFixed(3)), min: "0", step: "0.1" });
 
-        const radRow = div({ id: "row-radius" },
-            label({ textContent: "Radius" }),
-            input({ id: "cut-radius", type: "number", value: String(+def.radius.toFixed(3)), min: "0", step: "0.1" }),
-        );
-
-        const wRow = div({ id: "row-width" },
-            label({ textContent: "Width" }),
-            input({ id: "cut-width", type: "number", value: String(+def.rectW.toFixed(3)), min: "0", step: "0.1" }),
-        );
-
-        const hRow = div({ id: "row-height" },
-            label({ textContent: "Height" }),
-            input({ id: "cut-height", type: "number", value: String(+def.rectH.toFixed(3)), min: "0", step: "0.1" }),
-        );
-
-        const depth = input({ id: "cut-depth", type: "number", value: String(this._cutoutPrefs.depth), min: "0", step: "0.1" });
+        const depth   = input({ id: "cut-depth",   type: "number", value: String(this._cutoutPrefs.depth), min: "0", step: "0.1" });
         const through = input({ id: "cut-through", type: "checkbox", checked: this._cutoutPrefs.through });
-        const depthRow = div({}, label({ textContent: "Depth" }), depth);
 
-        const applyBtn = button({ textContent: "Apply", onclick: () => this.applyCutout() });
-        const cancelBtn = button({ textContent: "Cancel", onclick: () => this.cancelCutout() });
+        const applyBtn  = button({ textContent: "Apply",  onclick: () => this.applyCutout(),  style: "padding:8px 16px; font-weight:600; border-radius:8px;" });
+        const cancelBtn = button({ textContent: "Cancel", onclick: () => this.cancelCutout(), style: "padding:8px 16px; font-weight:600; border-radius:8px;" });
+
+        const lbl = (t: string) => label({ textContent: t });
+
+        this._cutoutPanel.append(lbl("Type"), typeSel);
+        this._cutoutPanel.append(lbl("Center X"), cx);
+        this._cutoutPanel.append(lbl("Center Y"), cy);
+
+        const radLabel = lbl("Radius");
+        const wLabel   = lbl("Width");
+        const hLabel   = lbl("Height");
+
+        this._cutoutPanel.append(radLabel, rad);
+        this._cutoutPanel.append(wLabel,   w);
+        this._cutoutPanel.append(hLabel,   h);
+
+        const depthLabel = lbl("Depth");
+        this._cutoutPanel.append(depthLabel, depth);
+        this._cutoutPanel.append(lbl("Through"), through);
+
+        const actions = div({
+            style: "grid-column: 1 / -1; display:flex; gap:8px; justify-content:flex-end; padding-top:8px;"
+        }, applyBtn, cancelBtn);
+        this._cutoutPanel.append(actions);
 
         const applyVisibility = () => {
-            (depthRow as HTMLElement).style.display = (through as HTMLInputElement).checked ? "none" : "";
+            const isCircle = (typeSel as HTMLSelectElement).value === "circle";
+            radLabel.style.display = rad.style.display = isCircle ? "" : "none";
+            wLabel.style.display   = w.style.display   = isCircle ? "none" : "";
+            hLabel.style.display   = h.style.display   = isCircle ? "none" : "";
+
+            const showDepth = !(through as HTMLInputElement).checked;
+            depthLabel.style.display = depth.style.display = showDepth ? "" : "none";
         };
 
         const onShapeChange = () => {
-            const t = (typeSel as HTMLSelectElement).value;
-            (radRow as HTMLElement).style.display = t === "circle" ? "" : "none";
-            (wRow as HTMLElement).style.display = t === "rect" ? "" : "none";
-            (hRow as HTMLElement).style.display = t === "rect" ? "" : "none";
+            applyVisibility();
             this.updateCutoutPreview();
         };
 
-        typeSel.onchange = onShapeChange;
+        (typeSel as HTMLSelectElement).onchange = onShapeChange;
         (cx as HTMLInputElement).oninput = onShapeChange;
         (cy as HTMLInputElement).oninput = onShapeChange;
-        (radRow.querySelector("#cut-radius") as HTMLInputElement).oninput = onShapeChange;
-        (wRow.querySelector("#cut-width") as HTMLInputElement).oninput = onShapeChange;
-        (hRow.querySelector("#cut-height") as HTMLInputElement).oninput = onShapeChange;
+        (rad as HTMLInputElement).oninput = onShapeChange;
+        (w as HTMLInputElement).oninput = onShapeChange;
+        (h as HTMLInputElement).oninput = onShapeChange;
 
         (depth as HTMLInputElement).oninput = () => {
             this._cutoutPrefs.depth = parseFloat(depth.value) || 0;
@@ -359,20 +402,8 @@ export class Editor extends HTMLElement {
             this.updateCutoutPreview();
         };
 
-        this._cutoutPanel.append(
-            div({}, label({ textContent: "Type" }), typeSel),
-            div({}, label({ textContent: "Center X" }), cx),
-            div({}, label({ textContent: "Center Y" }), cy),
-            radRow,
-            wRow,
-            hRow,
-            depthRow,
-            div({}, label({ textContent: "Through" }), through),
-            div({}, applyBtn, cancelBtn),
-        );
-
-        onShapeChange();
         applyVisibility();
+        this.updateCutoutPreview();
     }
 
     private updateCutoutPreview() {
@@ -627,8 +658,23 @@ export class Editor extends HTMLElement {
 
     private resetCutoutPanel() {
         if (!this._cutoutPanel) return;
+
+        this._cutoutPanel.style.display = "flex";
+        this._cutoutPanel.style.justifyContent = "center";
+        this._cutoutPanel.style.alignItems = "center";
+        this._cutoutPanel.style.gap = "";
+        (this._cutoutPanel.style as any).gridTemplateColumns = "";
+        (this._cutoutPanel.style as any).gridAutoRows = "";
+        (this._cutoutPanel.style as any).alignItems = "center";
+
         while (this._cutoutPanel.firstChild) this._cutoutPanel.removeChild(this._cutoutPanel.firstChild);
-        this._cutoutPanel.append(button({ textContent: "Add", onclick: () => this.startCutoutFlow() }));
+        this._cutoutPanel.append(
+            button({
+                textContent: "Add",
+                onclick: () => this.startCutoutFlow(),
+                style: "padding:10px 22px; font-size:14px; font-weight:600; border-radius:8px;"
+            })
+        );
     }
 
     private finishCutout() {

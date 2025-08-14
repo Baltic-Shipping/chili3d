@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-08-08)
+// See CHANGELOG.md for modifications (updated 2025-08-14)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -7,35 +7,39 @@ import {
     EdgeMeshData,
     FaceMeshData,
     GeometryNode,
+    getCurrentApplication,
+    IEdge,
     IShape,
+    ISubEdgeShape,
     ISubShape,
     IVisualGeometry,
     Matrix4,
     ShapeMeshRange,
     ShapeNode,
     ShapeType,
-    IDisposable,
-    IEdge,
-    ISubEdgeShape,
     VisualConfig,
-    getCurrentApplication,
-    XYZ,
+    XYZ
 } from "chili-core";
 import { MeshUtils } from "chili-geo";
-import { Material, Mesh, MeshLambertMaterial, Raycaster, Vector3 } from "three";
+import { Material, Mesh, MeshLambertMaterial, Object3D, Raycaster, Vector3 } from "three";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial";
 import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2";
 import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry";
+import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer";
 import { defaultEdgeMaterial } from "./common";
 import { Constants } from "./constants";
 import { ThreeGeometryFactory } from "./threeGeometryFactory";
 import { ThreeHelper } from "./threeHelper";
+import style from "./threeView.module.css";
 import { ThreeVisualContext } from "./threeVisualContext";
 import { ThreeVisualObject } from "./threeVisualObject";
 
 export class ThreeGeometry extends ThreeVisualObject implements IVisualGeometry {
-    private _edgeLabels: { midLocal: XYZ; text: string; disp?: IDisposable }[] = [];
+    private _edgeLabels: { startLocal: XYZ; endLocal: XYZ; midLocal: XYZ; text: string; obj?: CSS2DObject }[] = [];
     private _edgeLabelRaf?: number;
+    private _raycaster = new Raycaster();
+    private _occluders: Object3D[] = [];
+    private _lastRefreshTs = 0;
     private _faceMaterial: Material | Material[];
     private _edges?: LineSegments2;
     private _faces?: Mesh;
@@ -86,7 +90,13 @@ export class ThreeGeometry extends ThreeVisualObject implements IVisualGeometry 
         const edges = mesh?.edges;
         if (!edges || !edges.range?.length) return;
 
-        this._edgeLabels.forEach(x => x.disp?.dispose());
+        for (const l of this._edgeLabels) {
+            if (l.obj) {
+                this.context.cssObjects.remove(l.obj);
+                (l.obj.element as HTMLElement).remove();
+                l.obj = undefined;
+            }
+        }
         this._edgeLabels.length = 0;
 
         const view = getCurrentApplication()?.activeView;
@@ -105,45 +115,128 @@ export class ThreeGeometry extends ThreeVisualObject implements IVisualGeometry 
             const midLocal = s.add(t).multiply(0.5);
             const text = e.length().toFixed(2) + " mm";
 
-            this._edgeLabels.push({ midLocal, text });
+            this._edgeLabels.push({ startLocal: s, endLocal: t, midLocal, text });
             e.dispose();
         }
 
+        this.updateOccluders();
         this.refreshEdgeLabels();
         this.ensureLabelVisLoop();
+    }
+
+    private updateOccluders() {
+        this._raycaster.layers.disableAll();
+        this._raycaster.layers.enable(Constants.Layers.Solid);
+        const arr: Object3D[] = [];
+        this.context.visuals().forEach(v => {
+            const objs = (v as any).wholeVisual?.() as Object3D[] | undefined;
+            if (!objs) return;
+            for (const o of objs) {
+                if ((o as any).layers?.test && (o as any).layers.test(this._raycaster.layers)) arr.push(o);
+            }
+        });
+        this._occluders = arr;
     }
 
     private refreshEdgeLabels() {
         const view = getCurrentApplication()?.activeView;
         if (!view) return;
 
-        const selfObjs = (this as any).wholeVisual?.() as any[] | undefined;
+        const selfObjs = (this as any).wholeVisual?.() as Object3D[] | undefined;
         const root = selfObjs && selfObjs[0];
         if (!root || !root.matrixWorld) return;
 
+        const MIN_EDGE_PX = 36;
+        const MAX_VISIBLE = 60;
+
+        const candidates: {
+            idx: number;
+            lenPx: number;
+            midWorld: XYZ;
+        }[] = [];
+
+        for (let i = 0; i < this._edgeLabels.length; i++) {
+            const lbl = this._edgeLabels[i];
+            const v0 = new Vector3(lbl.startLocal.x, lbl.startLocal.y, lbl.startLocal.z).applyMatrix4(root.matrixWorld);
+            const v1 = new Vector3(lbl.endLocal.x, lbl.endLocal.y, lbl.endLocal.z).applyMatrix4(root.matrixWorld);
+            const vm = new Vector3(lbl.midLocal.x, lbl.midLocal.y, lbl.midLocal.z).applyMatrix4(root.matrixWorld);
+
+            const lenPx = this.edgePixelLength(v0, v1);
+            if (lenPx < MIN_EDGE_PX) {
+                if (lbl.obj) lbl.obj.visible = false;
+                continue;
+            }
+
+            candidates.push({ idx: i, lenPx, midWorld: new XYZ(vm.x, vm.y, vm.z) });
+        }
+
+        candidates.sort((a, b) => b.lenPx - a.lenPx);
+
         const seen = new Set<string>();
+        let shown = 0;
+
+        for (const c of candidates) {
+            if (shown >= MAX_VISIBLE) break;
+            const lbl = this._edgeLabels[c.idx];
+            if (seen.has(lbl.text)) {
+                if (lbl.obj) lbl.obj.visible = false;
+                continue;
+            }
+            if (this.isOccluded(c.midWorld)) {
+                if (lbl.obj) lbl.obj.visible = false;
+                continue;
+            }
+
+            if (!lbl.obj) {
+                const el = document.createElement("div");
+                el.className = `${style.htmlText} ${style.noEvent}`;
+                const sp = document.createElement("span");
+                sp.textContent = lbl.text;
+                el.appendChild(sp);
+                lbl.obj = new CSS2DObject(el);
+                this.context.cssObjects.add(lbl.obj);
+            }
+            lbl.obj.position.set(c.midWorld.x, c.midWorld.y, c.midWorld.z);
+            lbl.obj.visible = true;
+
+            seen.add(lbl.text);
+            shown++;
+        }
 
         for (const lbl of this._edgeLabels) {
-            const v = new Vector3(lbl.midLocal.x, lbl.midLocal.y, lbl.midLocal.z).applyMatrix4(root.matrixWorld);
-            const midWorld = new XYZ(v.x, v.y, v.z);
-
-            const occluded = this.isOccluded(midWorld);
-            const unique = !seen.has(lbl.text);
-
-            if (!occluded && unique) {
-            if (lbl.disp && (lbl.disp as any).setPosition) {
-                (lbl.disp as any).setPosition(midWorld);
-            } else {
-                if (lbl.disp) lbl.disp.dispose();
-                lbl.disp = view.htmlText(lbl.text, midWorld, { hideDelete: true });
-            }
-            seen.add(lbl.text);
-            } else if (lbl.disp) {
-            lbl.disp.dispose();
-            lbl.disp = undefined;
-            }
+            if (!lbl.obj) continue;
+            if (!lbl.obj.visible) continue;
+            if (!seen.has(lbl.text)) lbl.obj.visible = false;
         }
-        }
+    }
+
+    private edgePixelLength(a: Vector3, b: Vector3) {
+        const view = getCurrentApplication()?.activeView;
+        if (!view) return Infinity;
+
+        const cam: any =
+            (view as any).three?.camera ||
+            (view.cameraController as any).camera ||
+            (view.cameraController as any).three ||
+            (view as any).camera;
+
+        const w = (view as any).width || (view as any).size?.width || (view as any).dom?.clientWidth || 1920;
+        const h = (view as any).height || (view as any).size?.height || (view as any).dom?.clientHeight || 1080;
+
+        if (!cam || !w || !h) return Infinity;
+
+        const pa = a.clone().project(cam);
+        const pb = b.clone().project(cam);
+
+        const sx0 = (pa.x * 0.5 + 0.5) * w;
+        const sy0 = (-pa.y * 0.5 + 0.5) * h;
+        const sx1 = (pb.x * 0.5 + 0.5) * w;
+        const sy1 = (-pb.y * 0.5 + 0.5) * h;
+
+        const dx = sx1 - sx0;
+        const dy = sy1 - sy0;
+        return Math.hypot(dx, dy);
+    }
 
     private ensureLabelVisLoop() {
         if (this._edgeLabelRaf) return;
@@ -154,55 +247,56 @@ export class ThreeGeometry extends ThreeVisualObject implements IVisualGeometry 
 
         const tick = () => {
             if (view.isClosed) {
-            this._edgeLabelRaf = undefined;
-            return;
+                this._edgeLabelRaf = undefined;
+                return;
             }
 
             const p = view.cameraController.cameraPosition;
             const t = view.cameraController.cameraTarget;
             const camKey = `${p.x.toFixed(2)},${p.y.toFixed(2)},${p.z.toFixed(2)}|${t.x.toFixed(2)},${t.y.toFixed(2)},${t.z.toFixed(2)}|${view.mode}`;
 
-            const selfObjs = (this as any).wholeVisual?.() as any[] | undefined;
+            const selfObjs = (this as any).wholeVisual?.() as Object3D[] | undefined;
             const root = selfObjs && selfObjs[0];
             const mw = root?.matrixWorld?.elements as number[] | undefined;
             const objKey = mw ? mw.map(n => n.toFixed(3)).join(",") : "";
 
             const key = camKey + "#" + objKey;
 
-            if (key !== lastKey) {
-            lastKey = key;
-            this.refreshEdgeLabels();
+            const now = performance.now();
+            if (key !== lastKey && now - this._lastRefreshTs > 50) {
+                lastKey = key;
+                this._lastRefreshTs = now;
+                this.refreshEdgeLabels();
             }
 
             this._edgeLabelRaf = requestAnimationFrame(tick) as any;
         };
 
         this._edgeLabelRaf = requestAnimationFrame(tick) as any;
-        }
+    }
 
     private isOccluded(mid: XYZ) {
         const view = getCurrentApplication()?.activeView;
         if (!view) return false;
 
-        const origin = new Vector3(view.cameraController.cameraPosition.x, view.cameraController.cameraPosition.y, view.cameraController.cameraPosition.z);
+        const origin = new Vector3(
+            view.cameraController.cameraPosition.x,
+            view.cameraController.cameraPosition.y,
+            view.cameraController.cameraPosition.z
+        );
         const target = new Vector3(mid.x, mid.y, mid.z);
         const dir = target.clone().sub(origin).normalize();
         const dist = origin.distanceTo(target);
 
-        const raycaster = new Raycaster(origin, dir, 0.001, Math.max(0, dist - 0.5));
-        raycaster.layers.disableAll();
-        raycaster.layers.enable(Constants.Layers.Solid);
+        this._raycaster.layers.disableAll();
+        this._raycaster.layers.enable(Constants.Layers.Solid);
+        (this._raycaster as any).near = 0.001;
+        (this._raycaster as any).far = Math.max(0, dist - 0.5);
+        this._raycaster.set(origin, dir);
 
-        const occluders: any[] = [];
-        this.context.visuals().forEach(v => {
-            const objs = (v as any).wholeVisual?.() as any[] | undefined;
-            if (!objs) return;
-            for (const o of objs) {
-                if ((o as any).layers?.test && (o as any).layers.test(raycaster.layers)) occluders.push(o);
-            }
-        });
+        if (!this._occluders.length) this.updateOccluders();
 
-        const hits = raycaster.intersectObjects(occluders, false);
+        const hits = this._raycaster.intersectObjects(this._occluders, false);
         return hits.length > 0;
     }
 
@@ -214,10 +308,17 @@ export class ThreeGeometry extends ThreeVisualObject implements IVisualGeometry 
     }
 
     private disposeEdgeLabels() {
-        this._edgeLabels.forEach(x => x.disp?.dispose());
+        for (const l of this._edgeLabels) {
+            if (l.obj) {
+                this.context.cssObjects.remove(l.obj);
+                (l.obj.element as HTMLElement).remove();
+                l.obj = undefined;
+            }
+        }
         this._edgeLabels.length = 0;
         if (this._edgeLabelRaf) cancelAnimationFrame(this._edgeLabelRaf);
         this._edgeLabelRaf = undefined;
+        this._occluders = [];
     }
 
     override dispose() {

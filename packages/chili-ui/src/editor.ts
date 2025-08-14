@@ -2,7 +2,7 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { button, div, Expander, input, label, option, select } from "chili-controls";
+import { button, div, Expander, input, label } from "chili-controls";
 import {
     AsyncController,
     Button,
@@ -63,7 +63,7 @@ export class Editor extends HTMLElement {
     private _cutoutPlane?: Plane;
     private _cutoutHintEl?: HTMLElement;
     private _cutoutActive = false;
-    private _cutoutPrefs = { through: false, depth: 10 };
+    private _cutoutPrefs = { through: false, depth: 10, type: "circle" };
 
     constructor(app: IApplication, tabs: RibbonTab[]) {
         super();
@@ -328,11 +328,55 @@ export class Editor extends HTMLElement {
 
         const def = this._computeCutDefaults();
 
-        const typeSel = select(
-            { id: "cut-type" },
-            option({ value: "circle", textContent: "Circle" }),
-            option({ value: "rect", textContent: "Rectangle" }),
-        );
+        const typeHidden = input({ id: "cut-type", type: "hidden", value: this._cutoutPrefs.type });
+
+        const iconRow = div({
+            style: "display:flex; gap:8px; align-items:center;"
+        });
+
+        const makeBtn = (kind: "circle" | "rect", selected: boolean) => {
+            const b = button({
+                style: `background:transparent; border:none; padding:4px; margin:0; line-height:0; display:inline-flex; align-items:center; justify-content:center; color:${selected ? "#000" : "#999"}; cursor:pointer;`
+            });
+            if (kind === "circle") {
+                const svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
+                svg.setAttribute("width","20"); svg.setAttribute("height","20"); svg.setAttribute("viewBox","0 0 20 20");
+                const c = document.createElementNS("http://www.w3.org/2000/svg","circle");
+                c.setAttribute("cx","10"); c.setAttribute("cy","10"); c.setAttribute("r","8"); c.setAttribute("fill","none"); c.setAttribute("stroke","currentColor"); c.setAttribute("stroke-width","2");
+                svg.appendChild(c); b.appendChild(svg);
+            } else {
+                const svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
+                svg.setAttribute("width","20"); svg.setAttribute("height","20"); svg.setAttribute("viewBox","0 0 20 20");
+                const r = document.createElementNS("http://www.w3.org/2000/svg","rect");
+                r.setAttribute("x","3"); r.setAttribute("y","3"); r.setAttribute("width","14"); r.setAttribute("height","14");
+                r.setAttribute("fill","none"); r.setAttribute("stroke","currentColor"); r.setAttribute("stroke-width","2");
+                svg.appendChild(r); b.appendChild(svg);
+            }
+            (b as any).dataset.kind = kind;
+            return b;
+        };
+
+        const btnCircle = makeBtn("circle", this._cutoutPrefs.type === "circle");
+        const btnRect   = makeBtn("rect",   this._cutoutPrefs.type === "rect");
+
+        const updateBtnStyles = () => {
+            const isCircle = typeHidden.value === "circle";
+            btnCircle.style.color = isCircle ? "#000" : "#999";
+            btnRect.style.color   = isCircle ? "#999" : "#000";
+        };
+
+        const setType = (k: "circle" | "rect") => {
+            typeHidden.value = k;
+            this._cutoutPrefs.type = k;
+            updateBtnStyles();
+            applyVisibility();
+            this.updateCutoutPreview();
+        };
+
+        btnCircle.onclick = () => setType("circle");
+        btnRect.onclick   = () => setType("rect");
+
+        iconRow.append(btnCircle, btnRect);
 
         const cx = input({ id: "cut-cx", type: "number", value: String(+def.cx.toFixed(3)), step: "0.1" });
         const cy = input({ id: "cut-cy", type: "number", value: String(+def.cy.toFixed(3)), step: "0.1" });
@@ -348,7 +392,7 @@ export class Editor extends HTMLElement {
 
         const lbl = (t: string) => label({ textContent: t });
 
-        this._cutoutPanel.append(lbl("Type"), typeSel);
+        this._cutoutPanel.append(lbl("Shape"), iconRow, typeHidden);
         this._cutoutPanel.append(lbl("Center X"), cx);
         this._cutoutPanel.append(lbl("Center Y"), cy);
 
@@ -370,7 +414,7 @@ export class Editor extends HTMLElement {
         this._cutoutPanel.append(actions);
 
         const applyVisibility = () => {
-            const isCircle = (typeSel as HTMLSelectElement).value === "circle";
+            const isCircle = (typeHidden as HTMLInputElement).value === "circle";
             radLabel.style.display = rad.style.display = isCircle ? "" : "none";
             wLabel.style.display   = w.style.display   = isCircle ? "none" : "";
             hLabel.style.display   = h.style.display   = isCircle ? "none" : "";
@@ -384,7 +428,6 @@ export class Editor extends HTMLElement {
             this.updateCutoutPreview();
         };
 
-        (typeSel as HTMLSelectElement).onchange = onShapeChange;
         (cx as HTMLInputElement).oninput = onShapeChange;
         (cy as HTMLInputElement).oninput = onShapeChange;
         (rad as HTMLInputElement).oninput = onShapeChange;
@@ -402,6 +445,7 @@ export class Editor extends HTMLElement {
             this.updateCutoutPreview();
         };
 
+        updateBtnStyles();
         applyVisibility();
         this.updateCutoutPreview();
     }
@@ -417,14 +461,14 @@ export class Editor extends HTMLElement {
         }
 
         const plane = this.getWorldPlane();
-        const typeSel = this._cutoutPanel.querySelector<HTMLSelectElement>("#cut-type")!;
+        const typeEl = this._cutoutPanel.querySelector<HTMLInputElement>("#cut-type")!;
         const cx = parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-cx")!.value) || 0;
         const cy = parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-cy")!.value) || 0;
         const center = plane.origin.add(plane.xvec.multiply(cx)).add(plane.yvec.multiply(cy));
 
         const sf = app.shapeFactory;
 
-        if (typeSel.value === "circle") {
+        if ((typeEl?.value || "circle") === "circle") {
             const r = Math.max(0.1, parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-radius")!.value) || 0);
             const edge = sf.circle(plane.normal, center, r);
             if (!edge.isOk) return;
@@ -479,8 +523,7 @@ export class Editor extends HTMLElement {
         const span = this.projectSpanAlong(node, outwardWorld);
         const H = through ? (span + 2 * eps) : Math.max(0.1, depthIn);
 
-
-        const t = panel.querySelector<HTMLSelectElement>("#cut-type")!.value;
+        const t = (panel.querySelector<HTMLInputElement>("#cut-type")!.value || "circle");
         let toolRes;
 
         if (t === "circle") {

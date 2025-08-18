@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-08-14)
+// See CHANGELOG.md for modifications (updated 2025-08-18)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -153,6 +153,7 @@ export class ThreeGeometry extends ThreeVisualObject implements IVisualGeometry 
             idx: number;
             lenPx: number;
             midWorld: XYZ;
+            lenMm: number;
         }[] = [];
 
         for (let i = 0; i < this._edgeLabels.length; i++) {
@@ -167,7 +168,8 @@ export class ThreeGeometry extends ThreeVisualObject implements IVisualGeometry 
                 continue;
             }
 
-            candidates.push({ idx: i, lenPx, midWorld: new XYZ(vm.x, vm.y, vm.z) });
+            const lenMm = v0.distanceTo(v1);
+            candidates.push({ idx: i, lenPx, midWorld: new XYZ(vm.x, vm.y, vm.z), lenMm });
         }
 
         candidates.sort((a, b) => b.lenPx - a.lenPx);
@@ -178,7 +180,9 @@ export class ThreeGeometry extends ThreeVisualObject implements IVisualGeometry 
         for (const c of candidates) {
             if (shown >= MAX_VISIBLE) break;
             const lbl = this._edgeLabels[c.idx];
-            if (seen.has(lbl.text)) {
+            const newText = c.lenMm.toFixed(2) + " mm";
+
+            if (seen.has(newText)) {
                 if (lbl.obj) lbl.obj.visible = false;
                 continue;
             }
@@ -191,15 +195,21 @@ export class ThreeGeometry extends ThreeVisualObject implements IVisualGeometry 
                 const el = document.createElement("div");
                 el.className = `${style.htmlText} ${style.noEvent}`;
                 const sp = document.createElement("span");
-                sp.textContent = lbl.text;
+                sp.textContent = newText;
                 el.appendChild(sp);
                 lbl.obj = new CSS2DObject(el);
                 this.context.cssObjects.add(lbl.obj);
+            } else if (lbl.text !== newText) {
+                const el = lbl.obj.element as HTMLElement;
+                const sp = el.firstElementChild as HTMLElement | null;
+                if (sp) sp.textContent = newText;
             }
+
+            lbl.text = newText;
             lbl.obj.position.set(c.midWorld.x, c.midWorld.y, c.midWorld.z);
             lbl.obj.visible = true;
 
-            seen.add(lbl.text);
+            seen.add(newText);
             shown++;
         }
 

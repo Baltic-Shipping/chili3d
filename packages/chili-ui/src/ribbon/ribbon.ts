@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-07-24)
+// See CHANGELOG.md for modifications (updated 2025-08-18)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -133,7 +133,7 @@ export class Ribbon extends HTMLElement {
     }
 
     private header() {
-        return div({ className: style.titleBar }, this.leftPanel(), this.centerPanel(), this.modeToggle());
+        return div({ className: style.titleBar }, this.leftPanel(), this.centerPanel(), this.modeToggle(), this.rightPanel());
     }
 
     private modeToggle() {
@@ -248,6 +248,23 @@ export class Ribbon extends HTMLElement {
             sources: this.dataContent.ribbonTabs,
             template: (tab: RibbonTabData) => this.ribbonTab(tab),
         });
+    }
+
+    private rightPanel() {
+        return div(
+            { className: style.right },
+            a(
+            {
+                href: "https://github.com/Baltic-Shipping/chili3d",
+                target: "_blank",
+                rel: "noopener",
+                className: style.sourceLink,
+                title: "View source code (AGPL-3.0)",
+            },
+            svg({ title: "GitHub", className: style.icon, icon: "icon-github" }),
+            span({ className: style.sourceText }, "Source"),
+            ),
+        );
     }
 
     private ribbonTab(tab: RibbonTabData) {

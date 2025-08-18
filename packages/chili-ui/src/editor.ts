@@ -1,17 +1,20 @@
-// See CHANGELOG.md for modifications (updated 2025-08-14)
+// See CHANGELOG.md for modifications (updated 2025-08-18)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
 import { button, div, Expander, input, label } from "chili-controls";
 import {
     AsyncController,
+    Binding,
     Button,
     ButtonSize,
     CommandKeys,
+    Config,
     GeometryNode,
     getCurrentApplication,
     I18nKeys,
     IApplication,
+    IConverter,
     IDocument,
     IElementarySurface,
     IFace,
@@ -22,6 +25,7 @@ import {
     Plane,
     Property,
     PubSub,
+    Result,
     RibbonTab,
     ShapeNode,
     ShapeType,
@@ -37,6 +41,7 @@ import { ProjectView } from "./project";
 import { PropertyView } from "./property";
 import { MaterialDataContent, MaterialEditor } from "./property/material";
 import { MaterialProperty } from "./property/materialProperty";
+import { SelectedParameters } from "./property/selectedParameters";
 import { Ribbon, RibbonDataContent } from "./ribbon";
 import { RibbonButton } from "./ribbon/ribbonButton";
 import { RibbonTabData } from "./ribbon/ribbonData";
@@ -44,7 +49,9 @@ import { Statusbar } from "./statusbar";
 import { LayoutViewport } from "./viewport";
 
 let quickCommands: CommandKeys[] = ["doc.save", "doc.saveToFile", "edit.undo", "edit.redo"];
-
+class BoolToDisplay implements IConverter<boolean> {
+    convert(value: boolean): Result<string> { return Result.ok(value ? "" : "none"); }
+}
 export class Editor extends HTMLElement {
     readonly ribbonContent: RibbonDataContent;
     private readonly _selectionController: OKCancel;
@@ -153,6 +160,13 @@ export class Editor extends HTMLElement {
             }))
         );
 
+        const selectedParamsSection = div({
+            id: "selected-params-section",
+            style: "grid-column: 1 / -1; margin-top:12px; padding-top:12px; border-top:1px solid #ddd; --panel-background-color: transparent;"
+        }, new SelectedParameters());
+
+        contentPanel.append(selectedParamsSection);
+
         contentPanel.append(cutoutSection);
 
         this._cutoutPanel = cutoutSection.querySelector("#cutout-body") as HTMLDivElement;
@@ -172,7 +186,7 @@ export class Editor extends HTMLElement {
         this._sidebarEl = div(
             {
                 className: style.sidebar,
-                style: `width: ${this._sidebarWidth}px;`,
+                style: { width: `${this._sidebarWidth}px`, display: new Binding(Config.instance, "advancedMode", new BoolToDisplay()) },
             },
             new ProjectView({ className: style.sidebarItem }),
             new PropertyView({ className: style.sidebarItem }),

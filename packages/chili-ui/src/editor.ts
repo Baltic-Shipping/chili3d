@@ -32,7 +32,8 @@ import {
     Transaction,
     VisualShapeData,
     VisualState,
-    XYZ
+    XYZ,
+    VisualConfig
 } from "chili-core";
 import { BooleanNode } from "../../chili/src/bodys/boolean";
 import style from "./editor.module.css";
@@ -141,6 +142,24 @@ export class Editor extends HTMLElement {
             btn.removeAttribute('title');
             contentPanel.append(btn);
         });
+        const labelsSection = div({
+            id: "labels-section",
+            style: "grid-column: 1 / -1; display:flex; align-items:center; gap:8px; margin-top:8px; padding-top:8px; border-top:1px solid #ddd;"
+        },
+            input({
+                id: "toggle-edge-labels",
+                type: "checkbox",
+                checked: VisualConfig.showEdgeDimensions,
+                onchange: (e: Event) => {
+                    const v = (e.target as HTMLInputElement).checked;
+                    VisualConfig.showEdgeDimensions = v;
+                }
+            }),
+            label({ htmlFor: "toggle-edge-labels", textContent: "Show labels" })
+        );
+
+        contentPanel.append(labelsSection);
+        
         const cutoutSection = div({
             id: "cutout-section",
             style: "grid-column: 1 / -1; margin-top:12px; padding-top:12px; border-top:1px solid #ddd;"

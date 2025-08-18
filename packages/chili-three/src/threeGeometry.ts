@@ -52,6 +52,7 @@ export class ThreeGeometry extends ThreeVisualObject implements IVisualGeometry 
         this._faceMaterial = context.getMaterial(geometryNode.materialId);
         this.generateShape();
         geometryNode.onPropertyChanged(this.handleGeometryPropertyChanged);
+        VisualConfig.onPropertyChanged(this.handleVisualConfigChanged);
     }
 
     changeFaceMaterial(material: Material | Material[]) {
@@ -80,7 +81,17 @@ export class ThreeGeometry extends ThreeVisualObject implements IVisualGeometry 
             this.changeFaceMaterial(this.context.getMaterial(this.geometryNode.materialId));
         } else if ((property as keyof ShapeNode) === "shape") {
             this.removeMeshes();
+            VisualConfig.removePropertyChanged(this.handleVisualConfigChanged);
             this.generateShape();
+        }
+    };
+
+    private readonly handleVisualConfigChanged = (property: string) => {
+        if (property !== "showEdgeDimensions") return;
+        if (VisualConfig.showEdgeDimensions) {
+            if (!this._edgeLabels.length) this.createEdgeLabels();
+        } else {
+            this.disposeEdgeLabels();
         }
     };
 

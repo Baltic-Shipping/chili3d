@@ -18,12 +18,9 @@ import {
     IDocument,
     IElementarySurface,
     IFace,
-    INode,
-    IView,
     Material,
     Orientation,
     Plane,
-    Property,
     PubSub,
     Result,
     RibbonTab,
@@ -41,7 +38,6 @@ import { OKCancel } from "./okCancel";
 import { ProjectView } from "./project";
 import { PropertyView } from "./property";
 import { MaterialDataContent, MaterialEditor } from "./property/material";
-import { MaterialProperty } from "./property/materialProperty";
 import { SelectedParameters } from "./property/selectedParameters";
 import { Ribbon, RibbonDataContent } from "./ribbon";
 import { RibbonButton } from "./ribbon/ribbonButton";
@@ -61,8 +57,6 @@ export class Editor extends HTMLElement {
     private _isResizingSidebar: boolean = false;
     private _templateSidebarEl: HTMLDivElement | null = null;
     private _sidebarEl: HTMLDivElement | null = null;
-    private _materialExpander?: Expander;
-    private _materialPanel?: HTMLDivElement;
     private _cutoutExpander?: Expander;
     private _cutoutPanel?: HTMLDivElement;
     private _cutoutPreviewId?: number;
@@ -91,31 +85,6 @@ export class Editor extends HTMLElement {
         this.render();
         document.body.appendChild(this);
     }
-
-    private readonly _updateMaterialSection = (document: IDocument, nodes: INode[]) => {
-        if (!this._materialPanel) return;
-        while (this._materialPanel.lastElementChild) this._materialPanel.removeChild(this._materialPanel.lastElementChild);
-        const geomNodes = nodes.filter((n): n is GeometryNode => n instanceof GeometryNode);
-        if (geomNodes.length === 0) return;
-        const prop = Property.getProperty(GeometryNode.prototype, "materialId");
-        if (!prop) return;
-        this._materialPanel.append(new MaterialProperty(document, geomNodes, prop));
-        };
-
-        private readonly _onShowPropertiesForMaterial = (document: IDocument, nodes: INode[]) => {
-        this._updateMaterialSection(document, nodes);
-        };
-
-        private readonly _onActiveViewChangedForMaterial = (view: IView | undefined) => {
-        if (!view) {
-            if (!this._materialPanel) return;
-            while (this._materialPanel.lastElementChild) this._materialPanel.removeChild(this._materialPanel.lastElementChild);
-            return;
-        }
-        const nodes = view.document.selection.getSelectedNodes();
-        this._updateMaterialSection(view.document, nodes);
-        };
-
 
     private render() {
         const templateCommands: CommandKeys[] = [
@@ -190,16 +159,11 @@ export class Editor extends HTMLElement {
 
         this._cutoutPanel = cutoutSection.querySelector("#cutout-body") as HTMLDivElement;
 
-        const materialExpander = new Expander("sidebar.material" as I18nKeys);
-        const materialPanel = materialExpander.contenxtPanel as HTMLDivElement;
-        this._materialExpander = materialExpander;
-        this._materialPanel = materialPanel;
         this._templateSidebarEl = div(
             { 
                 className: style.sidebar, style: `width: ${this._sidebarWidth}px; overflow-y: auto;` 
             },
-            templatesExpander,
-            materialExpander
+            templatesExpander
         );
 
         this._sidebarEl = div(
@@ -667,18 +631,12 @@ export class Editor extends HTMLElement {
         PubSub.default.sub("showSelectionControl", this.showSelectionControl);
         PubSub.default.sub("editMaterial", this._handleMaterialEdit);
         PubSub.default.sub("clearSelectionControl", this.clearSelectionControl);
-
-        PubSub.default.sub("showProperties", this._onShowPropertiesForMaterial);
-        PubSub.default.sub("activeViewChanged", this._onActiveViewChangedForMaterial);
     }
 
     disconnectedCallback(): void {
         PubSub.default.remove("showSelectionControl", this.showSelectionControl);
         PubSub.default.remove("editMaterial", this._handleMaterialEdit);
         PubSub.default.remove("clearSelectionControl", this.clearSelectionControl);
-
-        PubSub.default.remove("showProperties", this._onShowPropertiesForMaterial);
-        PubSub.default.remove("activeViewChanged", this._onActiveViewChangedForMaterial);
     }
 
     private readonly showSelectionControl = (controller: AsyncController) => {

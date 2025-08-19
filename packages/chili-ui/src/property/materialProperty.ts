@@ -1,3 +1,4 @@
+// See CHANGELOG.md for modifications (updated 2025-08-19)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -17,7 +18,11 @@ import style from "./materialProperty.module.css";
 import { PropertyBase } from "./propertyBase";
 
 export class MaterialProperty extends PropertyBase {
-    private readonly materials: ObservableCollection<Material>;
+    private materials: ObservableCollection<Material>;
+    private readonly onNodeChanged = (property: keyof any, source: any) => {
+        if (property !== "materialId" && property !== "faceMaterialPair") return;
+        this.refreshFrom(source.materialId);
+    };
 
     constructor(
         readonly document: IDocument,
@@ -30,6 +35,22 @@ export class MaterialProperty extends PropertyBase {
             collection({
                 sources: this.materials,
                 template: (material, index) => this.materialControl(document, material, index),
+            }),
+        );
+        objects.forEach((o) => (o as any).onPropertyChanged(this.onNodeChanged));
+    }
+
+    disconnectedCallback(): void {
+        this.objects.forEach((o) => (o as any).removePropertyChanged(this.onNodeChanged as any));
+    }
+
+    private refreshFrom(id: string | string[]) {
+        this.materials = this.materialCollection(id);
+        while (this.lastChild) this.removeChild(this.lastChild);
+        this.append(
+            collection({
+                sources: this.materials,
+                template: (material, index) => this.materialControl(this.document, material, index),
             }),
         );
     }
@@ -51,8 +72,8 @@ export class MaterialProperty extends PropertyBase {
                     cursor: "pointer",
                 },
                 onclick: (e) => {
-                    PubSub.default.pub("editMaterial", document, material, (material) => {
-                        this.setMaterial(e, material, index);
+                    PubSub.default.pub("editMaterial", document, material, (mat) => {
+                        this.setMaterial(e, mat, index);
                     });
                 },
             }),
@@ -62,11 +83,11 @@ export class MaterialProperty extends PropertyBase {
     private setMaterial(e: MouseEvent, material: Material, index: number) {
         Transaction.execute(this.document, "change material", () => {
             this.materials.replace(index, material);
-            this.objects.forEach((x) => {
+            this.objects.forEach((x: any) => {
                 if (this.property.name in x) {
                     x.materialId =
                         this.materials.length > 1
-                            ? x.materialId.toSpliced(index, 1, material.id)
+                            ? (x.materialId as string[]).toSpliced(index, 1, material.id)
                             : material.id;
                 }
             });
@@ -79,7 +100,7 @@ export class MaterialProperty extends PropertyBase {
         const materials = Array.isArray(id)
             ? id.map(findMaterial).filter(Boolean)
             : [findMaterial(id)].filter(Boolean);
-        return new ObservableCollection(...materials) as ObservableCollection<Material>;
+        return new ObservableCollection(...(materials as Material[])) as ObservableCollection<Material>;
     }
 }
 

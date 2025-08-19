@@ -1,3 +1,4 @@
+// See CHANGELOG.md for modifications (updated 2025-08-19)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -7,6 +8,7 @@ import { IDocument } from "../document";
 import { Id, IEqualityComparer, PubSub, Result } from "../foundation";
 import { I18n, I18nKeys } from "../i18n";
 import { Matrix4 } from "../math";
+import { Property } from "../property";
 import { Serializer } from "../serialize";
 import { EdgeMeshData, FaceMeshData, IShape, IShapeMeshData, LineType } from "../shape";
 import { GeometryNode } from "./geometryNode";
@@ -189,5 +191,76 @@ export class EditableShapeNode extends ShapeNode {
     ) {
         super(document, name, materialId, id);
         this._shape = shape instanceof Result ? shape : Result.ok(shape);
+        this.onPropertyChanged((p) => {
+            if (p === "transform" || p === "shape") {
+                this.emitPropertyChanged("importLength", undefined as any);
+                this.emitPropertyChanged("importWidth", undefined as any);
+                this.emitPropertyChanged("importHeight", undefined as any);
+            }
+        });
+    }
+
+    @Serializer.serialze()
+    @Property.define("import.keepProportions")
+    get keepProportions() {
+        return this.getPrivateValue("keepProportions", false);
+    }
+    set keepProportions(v: boolean) {
+        this.setProperty("keepProportions", v);
+    }
+
+    @Property.define("import.length")
+    get importLength() {
+        const bb = this.boundingBox();
+        return Math.max(0, (bb?.max.x ?? 0) - (bb?.min.x ?? 0));
+    }
+    set importLength(v: number) {
+        this.resizeAlong(0, v);
+    }
+
+    @Property.define("import.width")
+    get importWidth() {
+        const bb = this.boundingBox();
+        return Math.max(0, (bb?.max.y ?? 0) - (bb?.min.y ?? 0));
+    }
+    set importWidth(v: number) {
+        this.resizeAlong(1, v);
+    }
+
+    @Property.define("import.height")
+    get importHeight() {
+        const bb = this.boundingBox();
+        return Math.max(0, (bb?.max.z ?? 0) - (bb?.min.z ?? 0));
+    }
+    set importHeight(v: number) {
+        this.resizeAlong(2, v);
+    }
+
+    private resizeAlong(axis: 0 | 1 | 2, target: number) {
+        const bb = this.boundingBox();
+        if (!bb) return;
+
+        const currDims = [
+            Math.max(0, (bb.max.x ?? 0) - (bb.min.x ?? 0)),
+            Math.max(0, (bb.max.y ?? 0) - (bb.min.y ?? 0)),
+            Math.max(0, (bb.max.z ?? 0) - (bb.min.z ?? 0)),
+        ];
+
+        if (currDims[axis] <= 0 || !isFinite(target) || target <= 0) return;
+
+        const s = target / currDims[axis];
+        let sx = 1, sy = 1, sz = 1;
+        if (this.keepProportions) { sx = s; sy = s; sz = s; }
+        else { if (axis === 0) sx = s; if (axis === 1) sy = s; if (axis === 2) sz = s; }
+
+        const cx = ((bb.min.x ?? 0) + (bb.max.x ?? 0)) * 0.5;
+        const cy = ((bb.min.y ?? 0) + (bb.max.y ?? 0)) * 0.5;
+        const cz = ((bb.min.z ?? 0) + (bb.max.z ?? 0)) * 0.5;
+
+        const T = Matrix4.fromTranslation(cx, cy, cz)
+            .multiply(Matrix4.fromScale(sx, sy, sz))
+            .multiply(Matrix4.fromTranslation(-cx, -cy, -cz));
+
+        this.transform = this.transform.multiply(T);
     }
 }

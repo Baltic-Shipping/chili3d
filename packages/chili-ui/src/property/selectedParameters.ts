@@ -1,6 +1,6 @@
-// See CHANGELOG.md for modifications (updated 2025-08-18)
+// See CHANGELOG.md for modifications (updated 2025-08-19)
 import { div, Expander } from "chili-controls";
-import { IDocument, INode, IView, Node, Property, PubSub, VisualNode } from "chili-core";
+import { EditableShapeNode, IDocument, INode, IView, ParameterShapeNode, Property, PubSub, VisualNode } from "chili-core";
 import style from "./propertyView.module.css";
 import { findPropertyControl } from "./utils";
 
@@ -28,9 +28,10 @@ export class SelectedParameters extends HTMLElement {
         if (nodes.length !== 1) return;
         const n = nodes[0];
         if (!(n instanceof VisualNode)) return;
+        if (!(n instanceof ParameterShapeNode) && !(n instanceof EditableShapeNode)) return;
         const exp = new Expander(n.display());
         exp.contenxtPanel.append(
-            ...Property.getProperties(Object.getPrototypeOf(n), Node.prototype).map(p => findPropertyControl(document, [n], p)),
+            ...Property.getOwnProperties(Object.getPrototypeOf(n)).map(p => findPropertyControl(document, [n], p)),
         );
         this.panel.append(exp);
     };

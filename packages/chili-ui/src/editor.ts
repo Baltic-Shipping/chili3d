@@ -110,23 +110,23 @@ export class Editor extends HTMLElement {
             )
         );
         templateCommands.forEach(cmd => {
-        const btn = RibbonButton.fromCommandName(cmd, ButtonSize.large);
-        if (!btn) return;
-        btn.classList.add(style.hasTooltip);
-        const data = Command.getData(cmd);
-        if (data) {
-            const key = (`command.${data.key}`) as I18nKeys;
-            const apply = () => btn.setAttribute("data-tooltip", I18n.translate(key));
-            apply();
-            const onLangChanged = (property: keyof Config) => {
-                if (property === "languageIndex") apply();
-            };
-            Config.instance.onPropertyChanged(onLangChanged);
-        }
-        btn.querySelectorAll("span, label").forEach(el => el.remove());
-        btn.removeAttribute("title");
-        contentPanel.append(btn);
-    });
+            const btn = RibbonButton.fromCommandName(cmd, ButtonSize.large);
+            if (!btn) return;
+            btn.classList.add(style.hasTooltip);
+            const data = Command.getData(cmd);
+            if (data) {
+                const key = (`command.${data.key}`) as I18nKeys;
+                const apply = () => btn.setAttribute("data-tooltip", I18n.translate(key));
+                apply();
+                const onLangChanged = (property: keyof Config) => {
+                    if (property === "languageIndex") apply();
+                };
+                Config.instance.onPropertyChanged(onLangChanged);
+            }
+            btn.querySelectorAll("span, label").forEach(el => el.remove());
+            btn.removeAttribute("title");
+            contentPanel.append(btn);
+        });
         contentPanel.append(
             div(
                 { style: "grid-column: 1 / -1; margin-top:12px; padding-top:12px; border-top:1px solid #ddd;" },

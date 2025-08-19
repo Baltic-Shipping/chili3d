@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-08-11)
+// See CHANGELOG.md for modifications (updated 2025-08-19)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -24,7 +24,7 @@ export class VisualItemConfig extends Observable {
     temporaryEdgeColor = 0x33ff33;
 
     get showEdgeDimensions() {
-        return this.getPrivateValue("showEdgeDimensions", true);
+        return this.getPrivateValue("showEdgeDimensions", false);
     }
     set showEdgeDimensions(value: boolean) {
         this.setProperty("showEdgeDimensions", value);

@@ -565,7 +565,7 @@ export class Editor extends HTMLElement {
         const face = this._cutoutFace!.shape as IFace;
         const outwardLocal = face.orientation() === Orientation.REVERSED ? nUnit.multiply(-1) : nUnit;
         const inwardLocal = outwardLocal.multiply(-1);
-        
+
         const T = this._cutoutFace!.transform;
         const outwardWorld = T.ofVector(outwardLocal);
         const eps = through ? 0.5 : 0.0;
@@ -573,25 +573,46 @@ export class Editor extends HTMLElement {
         const H = through ? (span + 2 * eps) : Math.max(0.1, depthIn);
 
         const t = (panel.querySelector<HTMLInputElement>("#cut-type")!.value || "circle");
+
+        const sx = T.ofVector(plane.xvec).length();
+        const sy = T.ofVector(plane.yvec).length();
+
         let toolRes;
 
         if (t === "circle") {
-            const r = Math.max(0.1, parseFloat(panel.querySelector<HTMLInputElement>("#cut-radius")!.value) || 0);
-            const edgeRes = sf.circle(plane.normal, centerOnFace, r);
-            if (!edgeRes.isOk) return;
-            const wireRes = sf.wire([edgeRes.value]);
-            edgeRes.value.dispose?.();
-            if (!wireRes.isOk) return;
-            const faceRes = sf.face([wireRes.value]);
-            wireRes.value.dispose?.();
-            if (!faceRes.isOk) return;
-            toolRes = sf.prism(faceRes.value, inwardLocal.multiply(H));
-            faceRes.value.dispose?.();
+            const rWorld = Math.max(0.1, parseFloat(panel.querySelector<HTMLInputElement>("#cut-radius")!.value) || 0);
+            if (Math.abs(sx - sy) < 1e-9) {
+                const edgeRes = sf.circle(plane.normal, centerOnFace, rWorld);
+                if (!edgeRes.isOk) return;
+                const wireRes = sf.wire([edgeRes.value]); edgeRes.value.dispose?.();
+                if (!wireRes.isOk) return;
+                const faceRes = sf.face([wireRes.value]); wireRes.value.dispose?.();
+                if (!faceRes.isOk) return;
+                toolRes = sf.prism(faceRes.value, inwardLocal.multiply(H));
+                faceRes.value.dispose?.();
+            } else {
+                const rxLocal = rWorld / (sx || 1);
+                const ryLocal = rWorld / (sy || 1);
+                const useXAsMajor = rxLocal >= ryLocal;
+                const xvec = useXAsMajor ? plane.xvec : plane.yvec;
+                const major = useXAsMajor ? rxLocal : ryLocal;
+                const minor = useXAsMajor ? ryLocal : rxLocal;
+                const edgeRes = sf.ellipse(plane.normal, centerOnFace, xvec, major, minor);
+                if (!edgeRes.isOk) return;
+                const wireRes = sf.wire([edgeRes.value]); edgeRes.value.dispose?.();
+                if (!wireRes.isOk) return;
+                const faceRes = sf.face([wireRes.value]); wireRes.value.dispose?.();
+                if (!faceRes.isOk) return;
+                toolRes = sf.prism(faceRes.value, inwardLocal.multiply(H));
+                faceRes.value.dispose?.();
+            }
         } else {
-            const w = Math.max(0.1, parseFloat(panel.querySelector<HTMLInputElement>("#cut-width")!.value) || 0);
-            const h = Math.max(0.1, parseFloat(panel.querySelector<HTMLInputElement>("#cut-height")!.value) || 0);
-            const origin = centerOnFace.add(plane.xvec.multiply(-w*0.5)).add(plane.yvec.multiply(-h*0.5));
-            const faceRes = sf.rect(new Plane(origin, plane.normal, plane.xvec), w, h);
+            const wWorld = Math.max(0.1, parseFloat(panel.querySelector<HTMLInputElement>("#cut-width")!.value) || 0);
+            const hWorld = Math.max(0.1, parseFloat(panel.querySelector<HTMLInputElement>("#cut-height")!.value) || 0);
+            const wLocal = wWorld / (sx || 1);
+            const hLocal = hWorld / (sy || 1);
+            const origin = centerOnFace.add(plane.xvec.multiply(-wLocal * 0.5)).add(plane.yvec.multiply(-hLocal * 0.5));
+            const faceRes = sf.rect(new Plane(origin, plane.normal, plane.xvec), wLocal, hLocal);
             if (!faceRes.isOk) return;
             toolRes = sf.prism(faceRes.value, inwardLocal.multiply(H));
             faceRes.value.dispose?.();

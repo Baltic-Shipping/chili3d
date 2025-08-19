@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-08-18)
+// See CHANGELOG.md for modifications (updated 2025-08-19)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -27,10 +27,10 @@ import {
     ShapeNode,
     ShapeType,
     Transaction,
+    VisualConfig,
     VisualShapeData,
     VisualState,
-    XYZ,
-    VisualConfig
+    XYZ
 } from "chili-core";
 import { BooleanNode } from "../../chili/src/bodys/boolean";
 import style from "./editor.module.css";
@@ -96,11 +96,16 @@ export class Editor extends HTMLElement {
             "create.popupHSection",
             "create.popupUSection",
             "create.popupRecSection",
-            "file.import",
         ];
         const templatesExpander = new Expander("ribbon.tab.templates" as I18nKeys);
         const contentPanel = templatesExpander.contenxtPanel;
         contentPanel.classList.add(style.templateGrid);
+        contentPanel.append(
+            div(
+                { style: "grid-column: 1 / -1;" },
+                div({ style: "font-size:16px; font-weight:700; margin-bottom:8px;" }, label({ textContent: "Select a template:" }))
+            )
+        );
         templateCommands.forEach(cmd => {
             const btn = RibbonButton.fromCommandName(cmd, ButtonSize.large);
             if (!btn) return;
@@ -109,6 +114,33 @@ export class Editor extends HTMLElement {
             btn.setAttribute('data-tooltip', tooltip);
             btn.querySelectorAll('span, label').forEach(el => el.remove());
             btn.removeAttribute('title');
+            contentPanel.append(btn);
+        });
+        contentPanel.append(
+            div(
+                { style: "grid-column: 1 / -1; margin-top:12px; padding-top:12px; border-top:1px solid #ddd;" },
+                div({ style: "font-size:16px; font-weight:700; margin-bottom:8px;" }, label({ textContent: "Draw free-form:" }))
+            )
+        );
+        const freeFormCommands: CommandKeys[] = [
+            "create.line",
+            "create.arc",
+            "create.rect",
+            "create.circle",
+            "create.ellipse",
+            "create.bezier",
+            "create.polygon",
+            "create.thickSolid",
+            "file.import",
+        ];
+        freeFormCommands.forEach(cmd => {
+            const btn = RibbonButton.fromCommandName(cmd, ButtonSize.large);
+            if (!btn) return;
+            const tooltip = btn.textContent?.trim() || "";
+            btn.classList.add(style.hasTooltip);
+            btn.setAttribute("data-tooltip", tooltip);
+            btn.querySelectorAll("span, label").forEach(el => el.remove());
+            btn.removeAttribute("title");
             contentPanel.append(btn);
         });
         const labelsSection = div({
@@ -136,7 +168,7 @@ export class Editor extends HTMLElement {
             div({
                 id: "cutout-header",
                 style: "font-size:16px; font-weight:700; margin-bottom:8px;"
-            }, label({ textContent: "Cut Out" })),
+            }, label({ textContent: "Cut Out:" })),
             div({
                 id: "cutout-body",
                 style: "display:flex; justify-content:center; align-items:center;"
@@ -148,12 +180,13 @@ export class Editor extends HTMLElement {
             }))
         );
 
-        const selectedParamsSection = div({
-            id: "selected-params-section",
-            style: "grid-column: 1 / -1; margin-top:12px; padding-top:12px; border-top:1px solid #ddd; --panel-background-color: transparent;"
-        }, new SelectedParameters());
-
-        contentPanel.append(selectedParamsSection);
+        contentPanel.append(
+            div(
+                { style: "grid-column: 1 / -1; margin-top:12px; padding-top:12px; border-top:1px solid #ddd; --panel-background-color: transparent;" },
+                div({ style: "font-size:16px; font-weight:700; margin-bottom:8px;" }, label({ textContent: "Properties:" })),
+                new SelectedParameters()
+            )
+        );
 
         contentPanel.append(cutoutSection);
 
@@ -161,7 +194,7 @@ export class Editor extends HTMLElement {
 
         this._templateSidebarEl = div(
             { 
-                className: style.sidebar, style: `width: ${this._sidebarWidth}px; overflow-y: auto;` 
+                className: style.sidebar, style: `width: 460px; overflow-y: auto;` 
             },
             templatesExpander
         );

@@ -24,3 +24,4 @@
 **2025-08-13**  - cutout wizard and camera fixes
 **2025-08-14**  - improve label performance, improve cut out UI
 **2025-08-18**  - show properties in templates tab
+**2025-08-19**  - improve UI, hide status bar

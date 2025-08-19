@@ -1,9 +1,9 @@
+// See CHANGELOG.md for modifications (updated 2025-08-19)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
 import { div, label } from "chili-controls";
 import { Config, I18n, I18nKeys, Navigation3D, PubSub } from "chili-core";
-import { SnapConfig } from "./snapConfig";
 import style from "./statusbar.module.css";
 
 export class Statusbar extends HTMLElement {
@@ -35,7 +35,7 @@ export class Statusbar extends HTMLElement {
     private render() {
         this.append(
             div({ className: style.left }, this.tip),
-            div({ className: style.right }, new SnapConfig()),
+            div({ className: style.right }),
         );
     }
 

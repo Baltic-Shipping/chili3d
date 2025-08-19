@@ -8,16 +8,19 @@ import {
     Binding,
     Button,
     ButtonSize,
+    Command,
     CommandKeys,
     Config,
     GeometryNode,
     getCurrentApplication,
+    I18n,
     I18nKeys,
     IApplication,
     IConverter,
     IDocument,
     IElementarySurface,
     IFace,
+    Localize,
     Material,
     Orientation,
     Plane,
@@ -103,23 +106,31 @@ export class Editor extends HTMLElement {
         contentPanel.append(
             div(
                 { style: "grid-column: 1 / -1;" },
-                div({ style: "font-size:16px; font-weight:700; margin-bottom:8px;" }, label({ textContent: "Select a template:" }))
+                div({ style: "font-size:16px; font-weight:700; margin-bottom:8px;" }, label({ textContent: new Localize("templates.selectTemplate") }))
             )
         );
         templateCommands.forEach(cmd => {
-            const btn = RibbonButton.fromCommandName(cmd, ButtonSize.large);
-            if (!btn) return;
-            const tooltip = btn.textContent?.trim() || '';
-            btn.classList.add(style.hasTooltip);
-            btn.setAttribute('data-tooltip', tooltip);
-            btn.querySelectorAll('span, label').forEach(el => el.remove());
-            btn.removeAttribute('title');
-            contentPanel.append(btn);
-        });
+        const btn = RibbonButton.fromCommandName(cmd, ButtonSize.large);
+        if (!btn) return;
+        btn.classList.add(style.hasTooltip);
+        const data = Command.getData(cmd);
+        if (data) {
+            const key = (`command.${data.key}`) as I18nKeys;
+            const apply = () => btn.setAttribute("data-tooltip", I18n.translate(key));
+            apply();
+            const onLangChanged = (property: keyof Config) => {
+                if (property === "languageIndex") apply();
+            };
+            Config.instance.onPropertyChanged(onLangChanged);
+        }
+        btn.querySelectorAll("span, label").forEach(el => el.remove());
+        btn.removeAttribute("title");
+        contentPanel.append(btn);
+    });
         contentPanel.append(
             div(
                 { style: "grid-column: 1 / -1; margin-top:12px; padding-top:12px; border-top:1px solid #ddd;" },
-                div({ style: "font-size:16px; font-weight:700; margin-bottom:8px;" }, label({ textContent: "Draw free-form:" }))
+                div({ style: "font-size:16px; font-weight:700; margin-bottom:8px;" }, label({ textContent: new Localize("templates.drawFreeForm") }))
             )
         );
         const freeFormCommands: CommandKeys[] = [
@@ -136,9 +147,17 @@ export class Editor extends HTMLElement {
         freeFormCommands.forEach(cmd => {
             const btn = RibbonButton.fromCommandName(cmd, ButtonSize.large);
             if (!btn) return;
-            const tooltip = btn.textContent?.trim() || "";
             btn.classList.add(style.hasTooltip);
-            btn.setAttribute("data-tooltip", tooltip);
+            const data = Command.getData(cmd);
+            if (data) {
+                const key = (`command.${data.key}`) as I18nKeys;
+                const apply = () => btn.setAttribute("data-tooltip", I18n.translate(key));
+                apply();
+                const onLangChanged = (property: keyof Config) => {
+                    if (property === "languageIndex") apply();
+                };
+                Config.instance.onPropertyChanged(onLangChanged);
+            }
             btn.querySelectorAll("span, label").forEach(el => el.remove());
             btn.removeAttribute("title");
             contentPanel.append(btn);
@@ -156,7 +175,7 @@ export class Editor extends HTMLElement {
                     VisualConfig.showEdgeDimensions = v;
                 }
             }),
-            label({ htmlFor: "toggle-edge-labels", textContent: "Show labels" })
+            label({ htmlFor: "toggle-edge-labels", textContent: new Localize("templates.toggle.showMeasurements") })
         );
 
         contentPanel.append(labelsSection);
@@ -168,7 +187,7 @@ export class Editor extends HTMLElement {
             div({
                 id: "cutout-header",
                 style: "font-size:16px; font-weight:700; margin-bottom:8px;"
-            }, label({ textContent: "Cut Out:" })),
+            }, label({ textContent: new Localize("templates.cutout") })),
             div({
                 id: "cutout-body",
                 style: "display:flex; justify-content:center; align-items:center;"
@@ -183,7 +202,7 @@ export class Editor extends HTMLElement {
         contentPanel.append(
             div(
                 { style: "grid-column: 1 / -1; margin-top:12px; padding-top:12px; border-top:1px solid #ddd; --panel-background-color: transparent;" },
-                div({ style: "font-size:16px; font-weight:700; margin-bottom:8px;" }, label({ textContent: "Properties:" })),
+                div({ style: "font-size:16px; font-weight:700; margin-bottom:8px;" }, label({ textContent: new Localize("templates.properties") })),
                 new SelectedParameters()
             )
         );

@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-08-12)
+// See CHANGELOG.md for modifications (updated 2025-08-19)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -278,6 +278,10 @@ const I18N_KEYS = [
     "statusBar.snap",
     "statusBar.tracking",
     "templates.cutout",
+    "templates.selectTemplate",
+    "templates.drawFreeForm",
+    "templates.properties",
+    "templates.toggle.showMeasurements",
     "toast.command.{0}excuting",
     "toast.converter.error",
     "toast.converter.invalidColor",

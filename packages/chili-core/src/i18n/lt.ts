@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-08-12)
+// See CHANGELOG.md for modifications (updated 2025-08-19)
 import { Locale } from "./i18n";
 
 export default {
@@ -282,7 +282,11 @@ export default {
         "snap.nearest": "Artimiausias",
         "statusBar.snap": "Pritraukimas",
         "statusBar.tracking": "Sekimas",
-        "templates.cutout": "Iškirpti",
+        "templates.cutout": "Išpjauti:",
+        "templates.selectTemplate": "Pasirinkite šabloną:",
+        "templates.drawFreeForm": "Piešti laisva forma:",
+        "templates.properties": "Savybės:",
+        "templates.toggle.showMeasurements": "Rodyti matmenis",
         "toast.command.{0}excuting": "Vykdoma komanda {0}",
         "toast.converter.error": "Konvertavimo klaida",
         "toast.converter.invalidColor": "Spalva yra netinkama",

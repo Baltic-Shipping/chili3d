@@ -25,3 +25,4 @@
 **2025-08-14**  - improve label performance, improve cut out UI
 **2025-08-18**  - show properties in templates tab
 **2025-08-19**  - improve UI, hide status bar, add lithuanian translations, allow editing properties of imported shapes
+**2025-08-20**  - add copy/paste

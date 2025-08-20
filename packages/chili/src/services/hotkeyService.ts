@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-08-12)
+// See CHANGELOG.md for modifications (updated 2025-08-20)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -22,6 +22,8 @@ const DefaultKeyMap: HotkeyMap = {
     Enter: "special.last",
     "ctrl+z": "edit.undo",
     "ctrl+y": "edit.redo",
+    "ctrl+c": "edit.copy",
+    "ctrl+v": "edit.paste",
 };
 
 export class HotkeyService implements IService {

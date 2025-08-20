@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-08-19)
+// See CHANGELOG.md for modifications (updated 2025-08-20)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -116,6 +116,8 @@ const I18N_KEYS = [
     "command.workingPlane.fromSection",
     "command.workingPlane.set",
     "command.workingPlane.toggleDynamic",
+    "command.edit.copy",
+    "command.edit.paste",
     "common.angle",
     "common.area",
     "common.back",

@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-08-19)
+// See CHANGELOG.md for modifications (updated 2025-08-20)
 import { Locale } from "./i18n";
 
 export default {
@@ -118,6 +118,8 @@ export default {
         "command.workingPlane.fromSection": "Iš skerspjūvio",
         "command.workingPlane.set": "Nustatyti",
         "command.workingPlane.toggleDynamic": "Perjungti",
+        "command.edit.copy": "Kopijuoti",
+        "command.edit.paste": "Įklijuoti",
         "common.angle": "Kampas",
         "common.area": "Plotas",
         "common.back": "Atgal",

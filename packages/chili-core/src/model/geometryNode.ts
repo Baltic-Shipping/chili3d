@@ -1,10 +1,11 @@
+// See CHANGELOG.md for modifications (updated 2025-08-22)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
 import { MeshUtils } from "chili-geo";
 import { IDocument } from "../document";
 import { Id, PropertyHistoryRecord, Transaction } from "../foundation";
-import { BoundingBox } from "../math";
+import { BoundingBox, Matrix4 } from "../math";
 import { Property } from "../property";
 import { Serializer } from "../serialize";
 import { FaceMeshData, IShapeMeshData } from "../shape";
@@ -24,6 +25,52 @@ export class FaceMaterialPair {
 }
 
 export abstract class GeometryNode extends VisualNode {
+    @Property.define("position.world.x")
+    get worldX(): number {
+        const bb = this.boundingBox();
+        return ((bb?.min.x ?? 0) + (bb?.max.x ?? 0)) * 0.5;
+    }
+    set worldX(v: number) {
+        const bb = this.boundingBox();
+        if (!bb) return;
+        const cx = ((bb.min.x ?? 0) + (bb.max.x ?? 0)) * 0.5;
+        this.nudgeWorld(v - cx, 0, 0);
+    }
+
+    @Property.define("position.world.y")
+    get worldY(): number {
+        const bb = this.boundingBox();
+        return ((bb?.min.y ?? 0) + (bb?.max.y ?? 0)) * 0.5;
+    }
+    set worldY(v: number) {
+        const bb = this.boundingBox();
+        if (!bb) return;
+        const cy = ((bb.min.y ?? 0) + (bb.max.y ?? 0)) * 0.5;
+        this.nudgeWorld(0, v - cy, 0);
+    }
+
+    @Property.define("position.world.z")
+    get worldZ(): number {
+        const bb = this.boundingBox();
+        return ((bb?.min.z ?? 0) + (bb?.max.z ?? 0)) * 0.5;
+    }
+    set worldZ(v: number) {
+        const bb = this.boundingBox();
+        if (!bb) return;
+        const cz = ((bb.min.z ?? 0) + (bb.max.z ?? 0)) * 0.5;
+        this.nudgeWorld(0, 0, v - cz);
+    }
+
+    private nudgeWorld(dx: number, dy: number, dz: number) {
+        if (!dx && !dy && !dz) return;
+        const W = this.worldTransform();
+        const invW = W.invert() || Matrix4.identity();
+        const T = Matrix4.fromTranslation(dx, dy, dz);
+        const deltaLocal = invW.multiply(T).multiply(W);
+        this.transform = this.transform.multiply(deltaLocal);
+    }
+
+
     @Serializer.serialze()
     @Property.define("common.material", { type: "materialId" })
     get materialId(): string | string[] {

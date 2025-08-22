@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-08-20)
+// See CHANGELOG.md for modifications (updated 2025-08-22)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -310,6 +310,9 @@ const I18N_KEYS = [
     "viewport.fitContent",
     "viewport.zoomIn",
     "viewport.zoomOut",
+    "position.world.x",
+    "position.world.y",
+    "position.world.z",
 ] as const;
 
 export type I18nKeys = (typeof I18N_KEYS)[number];

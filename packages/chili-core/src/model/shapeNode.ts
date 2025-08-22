@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-08-19)
+// See CHANGELOG.md for modifications (updated 2025-08-22)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -7,7 +7,7 @@ import { VisualConfig } from "../config";
 import { IDocument } from "../document";
 import { Id, IEqualityComparer, PubSub, Result } from "../foundation";
 import { I18n, I18nKeys } from "../i18n";
-import { Matrix4 } from "../math";
+import { Matrix4, XYZ } from "../math";
 import { Property } from "../property";
 import { Serializer } from "../serialize";
 import { EdgeMeshData, FaceMeshData, IShape, IShapeMeshData, LineType } from "../shape";
@@ -240,27 +240,50 @@ export class EditableShapeNode extends ShapeNode {
         const bb = this.boundingBox();
         if (!bb) return;
 
-        const currDims = [
+        const dims = [
             Math.max(0, (bb.max.x ?? 0) - (bb.min.x ?? 0)),
             Math.max(0, (bb.max.y ?? 0) - (bb.min.y ?? 0)),
             Math.max(0, (bb.max.z ?? 0) - (bb.min.z ?? 0)),
         ];
+        const curr = dims[axis];
+        if (curr <= 0 || !isFinite(target) || target <= 0) return;
 
-        if (currDims[axis] <= 0 || !isFinite(target) || target <= 0) return;
-
-        const s = target / currDims[axis];
+        const s = target / curr;
         let sx = 1, sy = 1, sz = 1;
         if (this.keepProportions) { sx = s; sy = s; sz = s; }
         else { if (axis === 0) sx = s; if (axis === 1) sy = s; if (axis === 2) sz = s; }
 
-        const cx = ((bb.min.x ?? 0) + (bb.max.x ?? 0)) * 0.5;
-        const cy = ((bb.min.y ?? 0) + (bb.max.y ?? 0)) * 0.5;
-        const cz = ((bb.min.z ?? 0) + (bb.max.z ?? 0)) * 0.5;
+        const vis = this.document.visual.context.getVisual(this);
+        const wbb = vis?.boundingBox();
+        const cxw = wbb ? (wbb.min.x + wbb.max.x) * 0.5 : 0;
+        const cyw = wbb ? (wbb.min.y + wbb.max.y) * 0.5 : 0;
+        const czw = wbb ? (wbb.min.z + wbb.max.z) * 0.5 : 0;
 
-        const T = Matrix4.fromTranslation(cx, cy, cz)
-            .multiply(Matrix4.fromScale(sx, sy, sz))
-            .multiply(Matrix4.fromTranslation(-cx, -cy, -cz));
+        const W = this.worldTransform();
+        const invW = W.invert() || Matrix4.identity();
+        const anchorLocal = invW.ofPoint(new XYZ(cxw, cyw, czw));
 
-        this.transform = this.transform.multiply(T);
+        const Tneg = Matrix4.fromTranslation(-anchorLocal.x, -anchorLocal.y, -anchorLocal.z);
+        const S = Matrix4.fromScale(sx, sy, sz);
+        const Tpos = Matrix4.fromTranslation(anchorLocal.x, anchorLocal.y, anchorLocal.z);
+        const A = Tneg.multiply(S).multiply(Tpos);
+
+        this.transform = this.transform.multiply(A);
+
+        const vis2 = this.document.visual.context.getVisual(this);
+        const wbb2 = vis2?.boundingBox();
+        if (wbb && wbb2) {
+            const nx = (wbb2.min.x + wbb2.max.x) * 0.5;
+            const ny = (wbb2.min.y + wbb2.max.y) * 0.5;
+            const nz = (wbb2.min.z + wbb2.max.z) * 0.5;
+            const dx = cxw - nx, dy = cyw - ny, dz = czw - nz;
+            if (Math.abs(dx) > 1e-6 || Math.abs(dy) > 1e-6 || Math.abs(dz) > 1e-6) {
+                const T = Matrix4.fromTranslation(dx, dy, dz);
+                const W2 = this.worldTransform();
+                const invW2 = W2.invert() || Matrix4.identity();
+                const D = invW2.multiply(T).multiply(W2);
+                this.transform = this.transform.multiply(D);
+            }
+        }
     }
 }

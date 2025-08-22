@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-08-20)
+// See CHANGELOG.md for modifications (updated 2025-08-22)
 import { Locale } from "./i18n";
 
 export default {
@@ -314,5 +314,8 @@ export default {
         "viewport.fitContent": "Sutalpinti tūrinį į vaizdą",
         "viewport.zoomIn": "Priartinti",
         "viewport.zoomOut": "Nutolinti",
+        "position.world.x": "Pasaulio X",
+        "position.world.y": "Pasaulio Y",
+        "position.world.z": "Pasaulio Z",
     },
 } satisfies Locale;

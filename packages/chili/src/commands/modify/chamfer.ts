@@ -1,15 +1,17 @@
+// See CHANGELOG.md for modifications (updated 2025-08-25)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
 import {
+    command,
+    Config,
     EditableShapeNode,
     ISubEdgeShape,
     Property,
     ShapeNode,
     ShapeType,
     Transaction,
-    VisualState,
-    command,
+    VisualState
 } from "chili-core";
 import { SelectShapeStep } from "../../step/selectStep";
 import { MultistepCommand } from "../multistepCommand";
@@ -66,5 +68,18 @@ export class ChamferCommand extends MultistepCommand {
                 keepSelection: true,
             }),
         ];
+    }
+
+    protected override async executeAsync(): Promise<void> {
+        const prevShow = Config.instance.showSelectionConfirm;
+        const prevAuto = Config.instance.autoConfirmSelection;
+        try {
+            Config.instance.showSelectionConfirm = true;
+            Config.instance.autoConfirmSelection = false;
+            await super.executeAsync();
+        } finally {
+            Config.instance.showSelectionConfirm = prevShow;
+            Config.instance.autoConfirmSelection = prevAuto;
+        }
     }
 }

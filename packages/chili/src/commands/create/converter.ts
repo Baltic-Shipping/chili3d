@@ -1,9 +1,12 @@
+// See CHANGELOG.md for modifications (updated 2025-08-25)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
 import {
     AsyncController,
     CancelableCommand,
+    command,
+    Config,
     EditableShapeNode,
     GeometryNode,
     IDocument,
@@ -18,8 +21,7 @@ import {
     ShapeNode,
     ShapeNodeFilter,
     ShapeType,
-    Transaction,
-    command,
+    Transaction
 } from "chili-core";
 import { FaceNode } from "../../bodys/face";
 import { WireNode } from "../../bodys/wire";
@@ -89,6 +91,19 @@ abstract class ConvertCommand extends CancelableCommand {
     icon: "icon-toPoly",
 })
 export class ConvertToWire extends ConvertCommand {
+    public override async executeAsync(): Promise<void> {
+        const prevShow = Config.instance.showSelectionConfirm;
+        const prevAuto = Config.instance.autoConfirmSelection;
+        try {
+            Config.instance.showSelectionConfirm = true;
+            Config.instance.autoConfirmSelection = false;
+            await super.executeAsync();
+        } finally {
+            Config.instance.showSelectionConfirm = prevShow;
+            Config.instance.autoConfirmSelection = prevAuto;
+        }
+    }
+
     protected override create(document: IDocument, models: ShapeNode[]): Result<GeometryNode> {
         const edges = models.map((x) => x.shape.value.transformedMul(x.worldTransform())) as IEdge[];
         const wireBody = new WireNode(document, edges);

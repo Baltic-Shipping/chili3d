@@ -1,8 +1,8 @@
+// See CHANGELOG.md for modifications (updated 2025-08-25)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
 import {
-    AsyncController,
     CancelableCommand,
     Combobox,
     command,
@@ -13,8 +13,8 @@ import {
     Property,
     PubSub,
     readFilesAsync,
+    VisualNode
 } from "chili-core";
-import { SelectNodeStep } from "../step";
 import { importFiles } from "../utils";
 
 @command({
@@ -54,17 +54,12 @@ export class Export extends CancelableCommand {
 
     protected async executeAsync() {
         const nodes = await this.selectNodesAsync();
-        if (!nodes || nodes.length === 0) {
-            PubSub.default.pub("showToast", "toast.select.noSelected");
-            return;
-        }
-
+        const format = this.formats.selectedItem ?? this.application.dataExchange.exportFormats()[0];
         PubSub.default.pub(
             "showPermanent",
             async () => {
-                const format = this.formats.selectedItem;
-                if (format === undefined) return;
-
+                await new Promise(requestAnimationFrame);
+                await new Promise(r => setTimeout(r, 0));
                 const data = await this.application.dataExchange.export(format, nodes);
                 if (!data) return;
 
@@ -84,14 +79,21 @@ export class Export extends CancelableCommand {
         );
     }
 
-    private async selectNodesAsync() {
-        this.controller = new AsyncController();
-        const step = new SelectNodeStep("prompt.select.models", { multiple: true, keepSelection: true });
-        const data = await step.execute(this.application.activeView?.document!, this.controller);
-        if (!data?.nodes) {
-            PubSub.default.pub("showToast", "prompt.select.noModelSelected");
-            return undefined;
+    private async selectNodesAsync(): Promise<VisualNode[]> {
+        const doc = this.application.activeView?.document;
+        if (!doc) return [];
+        const sel = doc.selection.getSelectedNodes().filter(n => n instanceof VisualNode) as VisualNode[];
+        if (sel.length) return sel;
+
+        const result: VisualNode[] = [];
+        const stack: any[] = [doc.rootNode];
+        while (stack.length) {
+            const n = stack.pop();
+            if (!n) continue;
+            if (n instanceof VisualNode) result.push(n as VisualNode);
+            let c = (n as any).firstChild as any;
+            while (c) { stack.push(c); c = c.nextSibling as any; }
         }
-        return data.nodes;
+        return result;
     }
 }

@@ -27,3 +27,4 @@
 **2025-08-19**  - improve UI, hide status bar, add lithuanian translations, allow editing properties of imported shapes
 **2025-08-20**  - add copy/paste
 **2025-08-22**  - show world coordinates for each shape
+**2025-08-25**  - improve export

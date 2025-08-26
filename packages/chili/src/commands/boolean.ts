@@ -1,7 +1,8 @@
+// See CHANGELOG.md for modifications (updated 2025-08-26)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { IShape, PubSub, Result, ShapeNode, ShapeType, Transaction, VisualState, command } from "chili-core";
+import { command, Config, IShape, PubSub, Result, ShapeNode, ShapeType, Transaction, VisualState } from "chili-core";
 import { BooleanNode } from "../bodys/boolean";
 import { IStep, SelectShapeStep } from "../step";
 import { MultistepCommand } from "./multistepCommand";
@@ -77,6 +78,19 @@ export class BooleanCommon extends BooleanOperate {
     protected override getBooleanOperateType(): "common" | "cut" | "fuse" {
         return "common";
     }
+    
+    protected override async executeAsync(): Promise<void> {
+        const prevShow = Config.instance.showSelectionConfirm;
+        const prevAuto = Config.instance.autoConfirmSelection;
+        try {
+            Config.instance.showSelectionConfirm = true;
+            Config.instance.autoConfirmSelection = false;
+            await super.executeAsync();
+        } finally {
+            Config.instance.showSelectionConfirm = prevShow;
+            Config.instance.autoConfirmSelection = prevAuto;
+        }
+    }
 }
 
 @command({
@@ -87,6 +101,19 @@ export class BooleanCut extends BooleanOperate {
     protected override getBooleanOperateType(): "common" | "cut" | "fuse" {
         return "cut";
     }
+
+    protected override async executeAsync(): Promise<void> {
+        const prevShow = Config.instance.showSelectionConfirm;
+        const prevAuto = Config.instance.autoConfirmSelection;
+        try {
+            Config.instance.showSelectionConfirm = true;
+            Config.instance.autoConfirmSelection = false;
+            await super.executeAsync();
+        } finally {
+            Config.instance.showSelectionConfirm = prevShow;
+            Config.instance.autoConfirmSelection = prevAuto;
+        }
+    }
 }
 
 @command({
@@ -96,5 +123,18 @@ export class BooleanCut extends BooleanOperate {
 export class BooleanFuse extends BooleanOperate {
     protected override getBooleanOperateType(): "common" | "cut" | "fuse" {
         return "fuse";
+    }
+
+    protected override async executeAsync(): Promise<void> {
+        const prevShow = Config.instance.showSelectionConfirm;
+        const prevAuto = Config.instance.autoConfirmSelection;
+        try {
+            Config.instance.showSelectionConfirm = true;
+            Config.instance.autoConfirmSelection = false;
+            await super.executeAsync();
+        } finally {
+            Config.instance.showSelectionConfirm = prevShow;
+            Config.instance.autoConfirmSelection = prevAuto;
+        }
     }
 }

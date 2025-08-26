@@ -1,7 +1,8 @@
-// See CHANGELOG.md for modifications (updated 2025-08-08)
-import { command, IApplication, Transaction, PubSub, DialogResult, I18nKeys, I18n } from "chili-core";
-import { form, div, label, input } from "chili-controls";
+// See CHANGELOG.md for modifications (updated 2025-08-26)
+import { div, form, input, label } from "chili-controls";
+import { command, DialogResult, I18n, I18nKeys, IApplication, PubSub, Transaction } from "chili-core";
 import { CylinderNode } from "../../bodys";
+import { fitViewAfterSpawn, placeNodeAvoidingOverlap } from "../../utils";
 
 @command({
     key: "create.popupcylinder",
@@ -38,7 +39,9 @@ export class PopupCylinderCommand {
                 Transaction.execute(doc, "create popup cylinder", () => {
                     const node = new CylinderNode(doc, plane.normal, plane.origin, r, h);
                     doc.addNode(node);
+                    placeNodeAvoidingOverlap(doc, node);
                     doc.visual.update();
+                    fitViewAfterSpawn(application);
                 });
             }
         );

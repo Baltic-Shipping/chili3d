@@ -1,7 +1,8 @@
-// See CHANGELOG.md for modifications (updated 2025-08-08)
-import { command, IApplication, Transaction, PubSub, DialogResult, I18nKeys, I18n } from "chili-core";
-import { form, div, label, input } from "chili-controls";
+// See CHANGELOG.md for modifications (updated 2025-08-26)
+import { div, form, input, label } from "chili-controls";
+import { command, DialogResult, I18n, I18nKeys, IApplication, PubSub, Transaction } from "chili-core";
 import { TubeNode } from "../../bodys";
+import { fitViewAfterSpawn, placeNodeAvoidingOverlap } from "../../utils";
 
 @command({
     key: "create.popuptube",
@@ -64,7 +65,9 @@ export class PopupTubeCommand {
 
                     const node = new TubeNode(doc, plane, outerR, innerR, h);
                     doc.addNode(node);
+                    placeNodeAvoidingOverlap(doc, node);
                     doc.visual.update();
+                    fitViewAfterSpawn(application);
                 });
             }
         );

@@ -28,3 +28,4 @@
 **2025-08-20**  - add copy/paste
 **2025-08-22**  - show world coordinates for each shape
 **2025-08-25**  - improve export, bring back confirm dialog to certain actions
+**2025-08-26**  - bring back confirm dialog to certain actions, improve UX

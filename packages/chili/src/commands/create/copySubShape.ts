@@ -1,7 +1,8 @@
+// See CHANGELOG.md for modifications (updated 2025-08-26)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { EditableShapeNode, PubSub, ShapeType, Transaction, command } from "chili-core";
+import { command, Config, EditableShapeNode, PubSub, ShapeType, Transaction } from "chili-core";
 import { SelectShapeStep } from "../../step/selectStep";
 import { MultistepCommand } from "../multistepCommand";
 
@@ -33,5 +34,18 @@ export class CopySubShapeCommand extends MultistepCommand {
         return [
             new SelectShapeStep(ShapeType.Edge | ShapeType.Face, "prompt.select.shape", { multiple: true }),
         ];
+    }
+
+    protected override async executeAsync(): Promise<void> {
+        const prevShow = Config.instance.showSelectionConfirm;
+        const prevAuto = Config.instance.autoConfirmSelection;
+        try {
+            Config.instance.showSelectionConfirm = true;
+            Config.instance.autoConfirmSelection = false;
+            await super.executeAsync();
+        } finally {
+            Config.instance.showSelectionConfirm = prevShow;
+            Config.instance.autoConfirmSelection = prevAuto;
+        }
     }
 }

@@ -1,3 +1,4 @@
+// See CHANGELOG.md for modifications (updated 2025-08-29)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -167,6 +168,11 @@ export class CommandContext extends HTMLElement implements IDisposable {
                 type: "text",
                 className: style.input,
                 value: new Binding(noType, g.name),
+                oninput: (e) => {
+                    const el = e.target as HTMLInputElement;
+                    const v = converter ? converter(el.value) : el.value;
+                    if (!(converter && Number.isNaN(v))) noType[g.name] = v;
+                },
                 onkeydown: (e) => {
                     e.stopPropagation();
                     if (e.key === "Enter") {

@@ -109,6 +109,7 @@ const I18N_KEYS = [
     "command.modify.split",
     "command.modify.trim",
     "command.modify.cutout",
+    "command.modify.smartScale",
     "command.special.last",
     "command.test.performance",
     "command.wechat.group",

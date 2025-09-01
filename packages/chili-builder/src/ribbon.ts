@@ -23,6 +23,7 @@ export const DefaultRibbon: RibbonTab[] = [
             {
                 groupName: "ribbon.group.modify",
                 items: [
+                    "modify.smartScale",
                     "modify.move",
                     "modify.rotate",
                     "modify.mirror",

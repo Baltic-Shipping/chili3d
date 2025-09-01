@@ -114,6 +114,7 @@ export default {
         "command.modify.split": "Split",
         "command.modify.trim": "Trim",
         "command.modify.cutout": "Cut Out",
+        "command.modify.smartScale": "Smart Scale",
         "command.special.last": "__Last_COMMAND__",
         "command.test.performance": "Performance Test",
         "command.wechat.group": "Wechat",

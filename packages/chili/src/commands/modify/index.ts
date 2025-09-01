@@ -13,3 +13,4 @@ export * from "./removeSubShapes";
 export * from "./rotate";
 export * from "./split";
 export * from "./trim";
+export * from "./smartScale";

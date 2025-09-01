@@ -29,4 +29,5 @@
 **2025-08-22**  - show world coordinates for each shape
 **2025-08-25**  - improve export, bring back confirm dialog to certain actions
 **2025-08-26**  - bring back confirm dialog to certain actions, improve UX
-**2025-08-29**  - Fix commands like 'thick solid' requiring enter key to apply values
+**2025-08-29**  - fix commands like 'thick solid' requiring enter key to apply values
+**2025-09-01**  - allow to undo measure functionality

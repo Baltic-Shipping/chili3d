@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-08-19)
+// See CHANGELOG.md for modifications (updated 2025-09-30)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -22,6 +22,8 @@ import {
     IFace,
     Localize,
     Material,
+    MathUtils,
+    Matrix4,
     Orientation,
     Plane,
     PubSub,
@@ -33,7 +35,7 @@ import {
     VisualConfig,
     VisualShapeData,
     VisualState,
-    XYZ
+    XYZ,
 } from "chili-core";
 import { BooleanNode } from "../../chili/src/bodys/boolean";
 import style from "./editor.module.css";
@@ -50,7 +52,9 @@ import { LayoutViewport } from "./viewport";
 
 let quickCommands: CommandKeys[] = ["doc.save", "doc.saveToFile", "edit.undo", "edit.redo"];
 class BoolToDisplay implements IConverter<boolean> {
-    convert(value: boolean): Result<string> { return Result.ok(value ? "" : "none"); }
+    convert(value: boolean): Result<string> {
+        return Result.ok(value ? "" : "none");
+    }
 }
 export class Editor extends HTMLElement {
     readonly ribbonContent: RibbonDataContent;
@@ -73,7 +77,7 @@ export class Editor extends HTMLElement {
     constructor(app: IApplication, tabs: RibbonTab[]) {
         super();
         const allTabs = tabs.map(RibbonTabData.fromProfile);
-        const filteredTabs = allTabs.filter(tabData => tabData.tabName !== "ribbon.tab.templates");
+        const filteredTabs = allTabs.filter((tabData) => tabData.tabName !== "ribbon.tab.templates");
         this.ribbonContent = new RibbonDataContent(app, quickCommands, filteredTabs);
 
         const viewport = new LayoutViewport(app);
@@ -106,16 +110,19 @@ export class Editor extends HTMLElement {
         contentPanel.append(
             div(
                 { style: "grid-column: 1 / -1;" },
-                div({ style: "font-size:16px; font-weight:700; margin-bottom:8px;" }, label({ textContent: new Localize("templates.selectTemplate") }))
-            )
+                div(
+                    { style: "font-size:16px; font-weight:700; margin-bottom:8px;" },
+                    label({ textContent: new Localize("templates.selectTemplate") }),
+                ),
+            ),
         );
-        templateCommands.forEach(cmd => {
+        templateCommands.forEach((cmd) => {
             const btn = RibbonButton.fromCommandName(cmd, ButtonSize.large);
             if (!btn) return;
             btn.classList.add(style.hasTooltip);
             const data = Command.getData(cmd);
             if (data) {
-                const key = (`command.${data.key}`) as I18nKeys;
+                const key = `command.${data.key}` as I18nKeys;
                 const apply = () => btn.setAttribute("data-tooltip", I18n.translate(key));
                 apply();
                 const onLangChanged = (property: keyof Config) => {
@@ -123,15 +130,20 @@ export class Editor extends HTMLElement {
                 };
                 Config.instance.onPropertyChanged(onLangChanged);
             }
-            btn.querySelectorAll("span, label").forEach(el => el.remove());
+            btn.querySelectorAll("span, label").forEach((el) => el.remove());
             btn.removeAttribute("title");
             contentPanel.append(btn);
         });
         contentPanel.append(
             div(
-                { style: "grid-column: 1 / -1; margin-top:12px; padding-top:12px; border-top:1px solid #ddd;" },
-                div({ style: "font-size:16px; font-weight:700; margin-bottom:8px;" }, label({ textContent: new Localize("templates.drawFreeForm") }))
-            )
+                {
+                    style: "grid-column: 1 / -1; margin-top:12px; padding-top:12px; border-top:1px solid #ddd;",
+                },
+                div(
+                    { style: "font-size:16px; font-weight:700; margin-bottom:8px;" },
+                    label({ textContent: new Localize("templates.drawFreeForm") }),
+                ),
+            ),
         );
         const freeFormCommands: CommandKeys[] = [
             "create.line",
@@ -144,13 +156,13 @@ export class Editor extends HTMLElement {
             "create.thickSolid",
             "file.import",
         ];
-        freeFormCommands.forEach(cmd => {
+        freeFormCommands.forEach((cmd) => {
             const btn = RibbonButton.fromCommandName(cmd, ButtonSize.large);
             if (!btn) return;
             btn.classList.add(style.hasTooltip);
             const data = Command.getData(cmd);
             if (data) {
-                const key = (`command.${data.key}`) as I18nKeys;
+                const key = `command.${data.key}` as I18nKeys;
                 const apply = () => btn.setAttribute("data-tooltip", I18n.translate(key));
                 apply();
                 const onLangChanged = (property: keyof Config) => {
@@ -158,14 +170,15 @@ export class Editor extends HTMLElement {
                 };
                 Config.instance.onPropertyChanged(onLangChanged);
             }
-            btn.querySelectorAll("span, label").forEach(el => el.remove());
+            btn.querySelectorAll("span, label").forEach((el) => el.remove());
             btn.removeAttribute("title");
             contentPanel.append(btn);
         });
-        const labelsSection = div({
-            id: "labels-section",
-            style: "grid-column: 1 / -1; display:flex; align-items:center; gap:8px; margin-top:8px; padding-top:8px; border-top:1px solid #ddd;"
-        },
+        const labelsSection = div(
+            {
+                id: "labels-section",
+                style: "grid-column: 1 / -1; display:flex; align-items:center; gap:8px; margin-top:8px; padding-top:8px; border-top:1px solid #ddd;",
+            },
             input({
                 id: "toggle-edge-labels",
                 type: "checkbox",
@@ -173,38 +186,53 @@ export class Editor extends HTMLElement {
                 onchange: (e: Event) => {
                     const v = (e.target as HTMLInputElement).checked;
                     VisualConfig.showEdgeDimensions = v;
-                }
+                },
             }),
-            label({ htmlFor: "toggle-edge-labels", textContent: new Localize("templates.toggle.showMeasurements") })
+            label({
+                htmlFor: "toggle-edge-labels",
+                textContent: new Localize("templates.toggle.showMeasurements"),
+            }),
         );
 
         contentPanel.append(labelsSection);
-        
-        const cutoutSection = div({
-            id: "cutout-section",
-            style: "grid-column: 1 / -1; margin-top:12px; padding-top:12px; border-top:1px solid #ddd;"
-        },
-            div({
-                id: "cutout-header",
-                style: "font-size:16px; font-weight:700; margin-bottom:8px;"
-            }, label({ textContent: new Localize("templates.cutout") })),
-            div({
-                id: "cutout-body",
-                style: "display:flex; justify-content:center; align-items:center;"
-            }, button({
-                id: "cutout-add",
-                textContent: "Add",
-                onclick: () => this.startCutoutFlow(),
-                style: "padding:10px 22px; font-size:14px; font-weight:600; border-radius:8px;"
-            }))
+
+        const cutoutSection = div(
+            {
+                id: "cutout-section",
+                style: "grid-column: 1 / -1; margin-top:12px; padding-top:12px; border-top:1px solid #ddd;",
+            },
+            div(
+                {
+                    id: "cutout-header",
+                    style: "font-size:16px; font-weight:700; margin-bottom:8px;",
+                },
+                label({ textContent: new Localize("templates.cutout") }),
+            ),
+            div(
+                {
+                    id: "cutout-body",
+                    style: "display:flex; justify-content:center; align-items:center;",
+                },
+                button({
+                    id: "cutout-add",
+                    textContent: "Add",
+                    onclick: () => this.startCutoutFlow(),
+                    style: "padding:10px 22px; font-size:14px; font-weight:600; border-radius:8px;",
+                }),
+            ),
         );
 
         contentPanel.append(
             div(
-                { style: "grid-column: 1 / -1; margin-top:12px; padding-top:12px; border-top:1px solid #ddd; --panel-background-color: transparent;" },
-                div({ style: "font-size:16px; font-weight:700; margin-bottom:8px;" }, label({ textContent: new Localize("templates.properties") })),
-                new SelectedParameters()
-            )
+                {
+                    style: "grid-column: 1 / -1; margin-top:12px; padding-top:12px; border-top:1px solid #ddd; --panel-background-color: transparent;",
+                },
+                div(
+                    { style: "font-size:16px; font-weight:700; margin-bottom:8px;" },
+                    label({ textContent: new Localize("templates.properties") }),
+                ),
+                new SelectedParameters(),
+            ),
         );
 
         contentPanel.append(cutoutSection);
@@ -212,16 +240,20 @@ export class Editor extends HTMLElement {
         this._cutoutPanel = cutoutSection.querySelector("#cutout-body") as HTMLDivElement;
 
         this._templateSidebarEl = div(
-            { 
-                className: style.sidebar, style: `width: 460px; overflow-y: auto;` 
+            {
+                className: style.sidebar,
+                style: `width: 460px; overflow-y: auto;`,
             },
-            templatesExpander
+            templatesExpander,
         );
 
         this._sidebarEl = div(
             {
                 className: style.sidebar,
-                style: { width: `${this._sidebarWidth}px`, display: new Binding(Config.instance, "advancedMode", new BoolToDisplay()) },
+                style: {
+                    width: `${this._sidebarWidth}px`,
+                    display: new Binding(Config.instance, "advancedMode", new BoolToDisplay()),
+                },
             },
             new ProjectView({ className: style.sidebarItem }),
             new PropertyView({ className: style.sidebarItem }),
@@ -235,7 +267,12 @@ export class Editor extends HTMLElement {
             div(
                 { className: style.root },
                 new Ribbon(this.ribbonContent),
-                div({ className: style.content }, this._templateSidebarEl, this._sidebarEl, this._viewportContainer),
+                div(
+                    { className: style.content },
+                    this._templateSidebarEl,
+                    this._sidebarEl,
+                    this._viewportContainer,
+                ),
                 new Statusbar(style.statusbar),
             ),
         );
@@ -273,7 +310,10 @@ export class Editor extends HTMLElement {
         PubSub.default.pub("clearStatusBarTip");
         PubSub.default.pub("viewCursor", "default");
         if (!shapes || shapes.length === 0) {
-            if (this._cutoutHintEl) { this._cutoutHintEl.remove(); this._cutoutHintEl = undefined; }
+            if (this._cutoutHintEl) {
+                this._cutoutHintEl.remove();
+                this._cutoutHintEl = undefined;
+            }
             this._cutoutActive = false;
             this.resetCutoutPanel();
             return;
@@ -289,25 +329,44 @@ export class Editor extends HTMLElement {
         this._cutoutNode = node;
         this._cutoutPlane = plane;
 
-        if (this._cutoutHintEl) { this._cutoutHintEl.remove(); this._cutoutHintEl = undefined; }
+        if (this._cutoutHintEl) {
+            this._cutoutHintEl.remove();
+            this._cutoutHintEl = undefined;
+        }
         this.buildCutoutUI();
         this.updateCutoutPreview();
     }
 
-    private _computeCutDefaults(): { cx: number; cy: number; radius: number; rectW: number; rectH: number } {
+    private _computeCutDefaults(): {
+        cx: number;
+        cy: number;
+        radius: number;
+        rectW: number;
+        rectH: number;
+        triA: number;
+        triB: number;
+        triC: number;
+    } {
         if (!this._cutoutFace || !this._cutoutPlane) {
-            return { cx: 0, cy: 0, radius: 10, rectW: 20, rectH: 20 };
+            return { cx: 0, cy: 0, radius: 10, rectW: 20, rectH: 20, triA: 20, triB: 20, triC: 20 };
         }
 
         const planeW = (() => {
             const vs = this._cutoutFace!;
-            try { return this._cutoutPlane!.transformed(vs.transform); } catch { return this._cutoutPlane!; }
+            try {
+                return this._cutoutPlane!.transformed(vs.transform);
+            } catch {
+                return this._cutoutPlane!;
+            }
         })();
 
         const face = this._cutoutFace.shape as IFace;
         const T = this._cutoutFace.transform;
 
-        let minU = Infinity, maxU = -Infinity, minV = Infinity, maxV = -Infinity;
+        let minU = Infinity,
+            maxU = -Infinity,
+            minV = Infinity,
+            maxV = -Infinity;
 
         try {
             const wire = face.outerWire();
@@ -317,13 +376,17 @@ export class Editor extends HTMLElement {
             const yv = planeW.yvec.normalize()!;
             const o = planeW.origin;
             for (let i = 0; i < pos.length; i += 3) {
-                const px = pos[i], py = pos[i + 1], pz = pos[i + 2];
+                const px = pos[i],
+                    py = pos[i + 1],
+                    pz = pos[i + 2];
                 const pWorld = T.ofPoint(new XYZ(px, py, pz));
                 const d = pWorld.add(o.multiply(-1));
                 const u = d.dot(xv);
                 const v = d.dot(yv);
-                if (u < minU) minU = u; if (u > maxU) maxU = u;
-                if (v < minV) minV = v; if (v > maxV) maxV = v;
+                if (u < minU) minU = u;
+                if (u > maxU) maxU = u;
+                if (v < minV) minV = v;
+                if (v > maxV) maxV = v;
             }
         } catch {
             const bb = this._cutoutNode?.boundingBox();
@@ -345,11 +408,16 @@ export class Editor extends HTMLElement {
                     const d = c.add(o.multiply(-1));
                     const u = d.dot(xv);
                     const v = d.dot(yv);
-                    if (u < minU) minU = u; if (u > maxU) maxU = u;
-                    if (v < minV) minV = v; if (v > maxV) maxV = v;
+                    if (u < minU) minU = u;
+                    if (u > maxU) maxU = u;
+                    if (v < minV) minV = v;
+                    if (v > maxV) maxV = v;
                 }
             } else {
-                minU = 0; maxU = 20; minV = 0; maxV = 20;
+                minU = 0;
+                maxU = 20;
+                minV = 0;
+                maxV = 20;
             }
         }
 
@@ -361,7 +429,16 @@ export class Editor extends HTMLElement {
         const rectW = extU;
         const rectH = extV;
 
-        return { cx, cy, radius, rectW, rectH };
+        return {
+            cx,
+            cy,
+            radius,
+            rectW,
+            rectH,
+            triA: Math.min(rectW, rectH),
+            triB: Math.min(rectW, rectH),
+            triC: Math.min(rectW, rectH),
+        };
     }
 
     private buildCutoutUI() {
@@ -380,41 +457,71 @@ export class Editor extends HTMLElement {
         const typeHidden = input({ id: "cut-type", type: "hidden", value: this._cutoutPrefs.type });
 
         const iconRow = div({
-            style: "display:flex; gap:8px; align-items:center;"
+            style: "display:flex; gap:8px; align-items:center;",
         });
 
-        const makeBtn = (kind: "circle" | "rect", selected: boolean) => {
+        const makeBtn = (kind: "circle" | "rect" | "triangle", selected: boolean) => {
             const b = button({
-                style: `background:transparent; border:none; padding:4px; margin:0; line-height:0; display:inline-flex; align-items:center; justify-content:center; color:${selected ? "#000" : "#999"}; cursor:pointer;`
+                style: `background:transparent; border:none; padding:4px; margin:0; line-height:0; display:inline-flex; align-items:center; justify-content:center; color:${selected ? "#000" : "#999"}; cursor:pointer;`,
             });
             if (kind === "circle") {
-                const svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
-                svg.setAttribute("width","20"); svg.setAttribute("height","20"); svg.setAttribute("viewBox","0 0 20 20");
-                const c = document.createElementNS("http://www.w3.org/2000/svg","circle");
-                c.setAttribute("cx","10"); c.setAttribute("cy","10"); c.setAttribute("r","8"); c.setAttribute("fill","none"); c.setAttribute("stroke","currentColor"); c.setAttribute("stroke-width","2");
-                svg.appendChild(c); b.appendChild(svg);
+                const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                svg.setAttribute("width", "20");
+                svg.setAttribute("height", "20");
+                svg.setAttribute("viewBox", "0 0 20 20");
+                const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                c.setAttribute("cx", "10");
+                c.setAttribute("cy", "10");
+                c.setAttribute("r", "8");
+                c.setAttribute("fill", "none");
+                c.setAttribute("stroke", "currentColor");
+                c.setAttribute("stroke-width", "2");
+                svg.appendChild(c);
+                b.appendChild(svg);
+            } else if (kind === "rect") {
+                const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                svg.setAttribute("width", "20");
+                svg.setAttribute("height", "20");
+                svg.setAttribute("viewBox", "0 0 20 20");
+                const r = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                r.setAttribute("x", "3");
+                r.setAttribute("y", "3");
+                r.setAttribute("width", "14");
+                r.setAttribute("height", "14");
+                r.setAttribute("fill", "none");
+                r.setAttribute("stroke", "currentColor");
+                r.setAttribute("stroke-width", "2");
+                svg.appendChild(r);
+                b.appendChild(svg);
             } else {
-                const svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
-                svg.setAttribute("width","20"); svg.setAttribute("height","20"); svg.setAttribute("viewBox","0 0 20 20");
-                const r = document.createElementNS("http://www.w3.org/2000/svg","rect");
-                r.setAttribute("x","3"); r.setAttribute("y","3"); r.setAttribute("width","14"); r.setAttribute("height","14");
-                r.setAttribute("fill","none"); r.setAttribute("stroke","currentColor"); r.setAttribute("stroke-width","2");
-                svg.appendChild(r); b.appendChild(svg);
+                const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                svg.setAttribute("width", "20");
+                svg.setAttribute("height", "20");
+                svg.setAttribute("viewBox", "0 0 20 20");
+                const p = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+                p.setAttribute("points", "10,3 17,17 3,17");
+                p.setAttribute("fill", "none");
+                p.setAttribute("stroke", "currentColor");
+                p.setAttribute("stroke-width", "2");
+                svg.appendChild(p);
+                b.appendChild(svg);
             }
             (b as any).dataset.kind = kind;
             return b;
         };
 
         const btnCircle = makeBtn("circle", this._cutoutPrefs.type === "circle");
-        const btnRect   = makeBtn("rect",   this._cutoutPrefs.type === "rect");
+        const btnRect = makeBtn("rect", this._cutoutPrefs.type === "rect");
+        const btnTri = makeBtn("triangle", this._cutoutPrefs.type === "triangle");
 
         const updateBtnStyles = () => {
-            const isCircle = typeHidden.value === "circle";
-            btnCircle.style.color = isCircle ? "#000" : "#999";
-            btnRect.style.color   = isCircle ? "#999" : "#000";
+            const t = typeHidden.value;
+            btnCircle.style.color = t === "circle" ? "#000" : "#999";
+            btnRect.style.color = t === "rect" ? "#000" : "#999";
+            btnTri.style.color = t === "triangle" ? "#000" : "#999";
         };
 
-        const setType = (k: "circle" | "rect") => {
+        const setType = (k: "circle" | "rect" | "triangle") => {
             typeHidden.value = k;
             this._cutoutPrefs.type = k;
             updateBtnStyles();
@@ -423,53 +530,125 @@ export class Editor extends HTMLElement {
         };
 
         btnCircle.onclick = () => setType("circle");
-        btnRect.onclick   = () => setType("rect");
-
-        iconRow.append(btnCircle, btnRect);
+        btnRect.onclick = () => setType("rect");
+        btnTri.onclick = () => setType("triangle");
+        iconRow.append(btnCircle, btnRect, btnTri);
 
         const cx = input({ id: "cut-cx", type: "number", value: String(+def.cx.toFixed(3)), step: "0.1" });
         const cy = input({ id: "cut-cy", type: "number", value: String(+def.cy.toFixed(3)), step: "0.1" });
-        const rad = input({ id: "cut-radius", type: "number", value: String(+def.radius.toFixed(3)), min: "0", step: "0.1" });
-        const w   = input({ id: "cut-width",  type: "number", value: String(+def.rectW.toFixed(3)), min: "0", step: "0.1" });
-        const h   = input({ id: "cut-height", type: "number", value: String(+def.rectH.toFixed(3)), min: "0", step: "0.1" });
+        const rad = input({
+            id: "cut-radius",
+            type: "number",
+            value: String(+def.radius.toFixed(3)),
+            min: "0",
+            step: "0.1",
+        });
+        const w = input({
+            id: "cut-width",
+            type: "number",
+            value: String(+def.rectW.toFixed(3)),
+            min: "0",
+            step: "0.1",
+        });
+        const h = input({
+            id: "cut-height",
+            type: "number",
+            value: String(+def.rectH.toFixed(3)),
+            min: "0",
+            step: "0.1",
+        });
 
-        const depth   = input({ id: "cut-depth",   type: "number", value: String(this._cutoutPrefs.depth), min: "0", step: "0.1" });
+        const depthInput = input({
+            id: "cut-depth",
+            type: "number",
+            value: String(this._cutoutPrefs.depth),
+            min: "0",
+            step: "0.1",
+        }) as HTMLInputElement;
         const through = input({ id: "cut-through", type: "checkbox", checked: this._cutoutPrefs.through });
 
-        const applyBtn  = button({ textContent: "Apply",  onclick: () => this.applyCutout(),  style: "padding:8px 16px; font-weight:600; border-radius:8px;" });
-        const cancelBtn = button({ textContent: "Cancel", onclick: () => this.cancelCutout(), style: "padding:8px 16px; font-weight:600; border-radius:8px;" });
+        const applyBtn = button({
+            textContent: "Apply",
+            onclick: () => this.applyCutout(),
+            style: "padding:8px 16px; font-weight:600; border-radius:8px;",
+        });
+        const cancelBtn = button({
+            textContent: "Cancel",
+            onclick: () => this.cancelCutout(),
+            style: "padding:8px 16px; font-weight:600; border-radius:8px;",
+        });
 
         const lbl = (t: string) => label({ textContent: t });
 
         this._cutoutPanel.append(lbl("Shape"), iconRow, typeHidden);
         this._cutoutPanel.append(lbl("Center X"), cx);
         this._cutoutPanel.append(lbl("Center Y"), cy);
+        const rot = input({ id: "cut-rot", type: "number", value: "0", step: "1" }) as HTMLInputElement;
+        const triAInput = input({
+            id: "cut-a",
+            type: "number",
+            value: String(+(def.triA ?? Math.min(def.rectW, def.rectH)).toFixed(3)),
+            min: "0",
+            step: "0.1",
+        }) as HTMLInputElement;
+        const triBInput = input({
+            id: "cut-b",
+            type: "number",
+            value: String(+(def.triB ?? Math.min(def.rectW, def.rectH)).toFixed(3)),
+            min: "0",
+            step: "0.1",
+        }) as HTMLInputElement;
+        const triCInput = input({
+            id: "cut-c",
+            type: "number",
+            value: String(+(def.triC ?? Math.min(def.rectW, def.rectH)).toFixed(3)),
+            min: "0",
+            step: "0.1",
+        }) as HTMLInputElement;
 
         const radLabel = lbl("Radius");
-        const wLabel   = lbl("Width");
-        const hLabel   = lbl("Height");
+        const wLabel = lbl("Width");
+        const hLabel = lbl("Height");
+        const rotLabel = lbl("Rotation");
+        const aLabel = lbl("Side A");
+        const bLabel = lbl("Side B");
+        const cLabel = lbl("Side C");
 
         this._cutoutPanel.append(radLabel, rad);
-        this._cutoutPanel.append(wLabel,   w);
-        this._cutoutPanel.append(hLabel,   h);
+        this._cutoutPanel.append(wLabel, w);
+        this._cutoutPanel.append(hLabel, h);
+        this._cutoutPanel.append(rotLabel, rot);
+        this._cutoutPanel.append(aLabel, triAInput);
+        this._cutoutPanel.append(bLabel, triBInput);
+        this._cutoutPanel.append(cLabel, triCInput);
 
         const depthLabel = lbl("Depth");
-        this._cutoutPanel.append(depthLabel, depth);
+        this._cutoutPanel.append(depthLabel, depthInput);
         this._cutoutPanel.append(lbl("Through"), through);
 
-        const actions = div({
-            style: "grid-column: 1 / -1; display:flex; gap:8px; justify-content:flex-end; padding-top:8px;"
-        }, applyBtn, cancelBtn);
+        const actions = div(
+            {
+                style: "grid-column: 1 / -1; display:flex; gap:8px; justify-content:flex-end; padding-top:8px;",
+            },
+            applyBtn,
+            cancelBtn,
+        );
         this._cutoutPanel.append(actions);
 
         const applyVisibility = () => {
-            const isCircle = (typeHidden as HTMLInputElement).value === "circle";
+            const t = (typeHidden as HTMLInputElement).value;
+            const isCircle = t === "circle";
+            const isRect = t === "rect";
+            const isTri = t === "triangle";
             radLabel.style.display = rad.style.display = isCircle ? "" : "none";
-            wLabel.style.display   = w.style.display   = isCircle ? "none" : "";
-            hLabel.style.display   = h.style.display   = isCircle ? "none" : "";
-
+            wLabel.style.display = w.style.display = isRect ? "" : "none";
+            hLabel.style.display = h.style.display = isRect ? "" : "none";
+            rotLabel.style.display = rot.style.display = isRect || isTri ? "" : "none";
+            aLabel.style.display = triAInput.style.display = isTri ? "" : "none";
+            bLabel.style.display = triBInput.style.display = isTri ? "" : "none";
+            cLabel.style.display = triCInput.style.display = isTri ? "" : "none";
             const showDepth = !(through as HTMLInputElement).checked;
-            depthLabel.style.display = depth.style.display = showDepth ? "" : "none";
+            depthLabel.style.display = depthInput.style.display = showDepth ? "" : "none";
         };
 
         const onShapeChange = () => {
@@ -482,9 +661,13 @@ export class Editor extends HTMLElement {
         (rad as HTMLInputElement).oninput = onShapeChange;
         (w as HTMLInputElement).oninput = onShapeChange;
         (h as HTMLInputElement).oninput = onShapeChange;
+        rot.oninput = onShapeChange;
+        triAInput.oninput = onShapeChange;
+        triBInput.oninput = onShapeChange;
+        triCInput.oninput = onShapeChange;
 
-        (depth as HTMLInputElement).oninput = () => {
-            this._cutoutPrefs.depth = parseFloat(depth.value) || 0;
+        depthInput.oninput = () => {
+            this._cutoutPrefs.depth = parseFloat(depthInput.value) || 0;
             this.updateCutoutPreview();
         };
 
@@ -518,23 +701,85 @@ export class Editor extends HTMLElement {
         const sf = app.shapeFactory;
 
         if ((typeEl?.value || "circle") === "circle") {
-            const r = Math.max(0.1, parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-radius")!.value) || 0);
+            const r = Math.max(
+                0.1,
+                parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-radius")!.value) || 0,
+            );
             const edge = sf.circle(plane.normal, center, r);
             if (!edge.isOk) return;
             const mesh = edge.value.mesh.edges!;
             this._cutoutPreviewId = view.document.visual.context.displayMesh([mesh]);
             edge.value.dispose();
-        } else {
-            const w = Math.max(0.1, parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-width")!.value) || 0);
-            const h = Math.max(0.1, parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-height")!.value) || 0);
-            const o = center.add(plane.xvec.multiply(-w * 0.5)).add(plane.yvec.multiply(-h * 0.5));
-            const faceRes = sf.rect(new Plane(o, plane.normal, plane.xvec), w, h);
+        } else if ((typeEl?.value || "rect") === "rect") {
+            const w = Math.max(
+                0.1,
+                parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-width")!.value) || 0,
+            );
+            const h = Math.max(
+                0.1,
+                parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-height")!.value) || 0,
+            );
+            const rotDeg =
+                parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-rot")?.value || "0") || 0;
+            const rotRad = MathUtils.degToRad(rotDeg);
+            const ux = Matrix4.fromAxisRad(center, plane.normal, rotRad).ofVector(plane.xvec);
+            const uy = Matrix4.fromAxisRad(center, plane.normal, rotRad).ofVector(plane.yvec);
+            const o = center.add(ux.multiply(-w * 0.5)).add(uy.multiply(-h * 0.5));
+            const faceRes = sf.rect(new Plane(o, plane.normal, ux), w, h);
             if (!faceRes.isOk) return;
             const wire = faceRes.value.outerWire();
             const mesh = wire.mesh.edges!;
             this._cutoutPreviewId = view.document.visual.context.displayMesh([mesh]);
             wire.dispose();
             faceRes.value.dispose();
+        } else {
+            const A_ = Math.max(
+                0.1,
+                parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-a")!.value) || 0,
+            );
+            const B_ = Math.max(
+                0.1,
+                parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-b")!.value) || 0,
+            );
+            const C_ = Math.max(
+                0.1,
+                parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-c")!.value) || 0,
+            );
+            const rotDeg =
+                parseFloat(this._cutoutPanel.querySelector<HTMLInputElement>("#cut-rot")?.value || "0") || 0;
+            const rotRad = MathUtils.degToRad(rotDeg);
+            if (!(A_ + B_ > C_ && A_ + C_ > B_ && B_ + C_ > A_)) return;
+            const x = (A_ * A_ + B_ * B_ - C_ * C_) / (2 * A_);
+            const y2 = B_ * B_ - x * x;
+            if (!(y2 > 0)) return;
+            const y = Math.sqrt(y2);
+            const R = Matrix4.fromAxisRad(center, plane.normal, rotRad);
+            const ux = R.ofVector(plane.xvec);
+            const uy = R.ofVector(plane.yvec);
+            const A = center.add(ux.multiply(-A_ * 0.5));
+            const B = center.add(ux.multiply(A_ * 0.5));
+            const C = center.add(ux.multiply(x - A_ * 0.5)).add(uy.multiply(y));
+            const e1 = sf.line(A, B);
+            if (!e1.isOk) return;
+            const e2 = sf.line(B, C);
+            if (!e2.isOk) {
+                e1.value.dispose?.();
+                return;
+            }
+            const e3 = sf.line(C, A);
+            if (!e3.isOk) {
+                e1.value.dispose?.();
+                e2.value.dispose?.();
+                return;
+            }
+            const wres = sf.wire([e1.value, e2.value, e3.value]);
+            e1.value.dispose?.();
+            e2.value.dispose?.();
+            e3.value.dispose?.();
+            if (!wres.isOk) return;
+            const mesh = wres.value.mesh.edges!;
+            this._cutoutPreviewId = view.document.visual.context.displayMesh([mesh]);
+            wres.value.dispose?.();
         }
 
         view.update();
@@ -570,9 +815,9 @@ export class Editor extends HTMLElement {
         const outwardWorld = T.ofVector(outwardLocal);
         const eps = through ? 0.5 : 0.0;
         const span = this.projectSpanAlong(node, outwardWorld);
-        const H = through ? (span + 2 * eps) : Math.max(0.1, depthIn);
+        const H = through ? span + 2 * eps : Math.max(0.1, depthIn);
 
-        const t = (panel.querySelector<HTMLInputElement>("#cut-type")!.value || "circle");
+        const t = panel.querySelector<HTMLInputElement>("#cut-type")!.value || "circle";
 
         const sx = T.ofVector(plane.xvec).length();
         const sy = T.ofVector(plane.yvec).length();
@@ -580,40 +825,92 @@ export class Editor extends HTMLElement {
         let toolRes;
 
         if (t === "circle") {
-            const rWorld = Math.max(0.1, parseFloat(panel.querySelector<HTMLInputElement>("#cut-radius")!.value) || 0);
-            if (Math.abs(sx - sy) < 1e-9) {
-                const edgeRes = sf.circle(plane.normal, centerOnFace, rWorld);
-                if (!edgeRes.isOk) return;
-                const wireRes = sf.wire([edgeRes.value]); edgeRes.value.dispose?.();
-                if (!wireRes.isOk) return;
-                const faceRes = sf.face([wireRes.value]); wireRes.value.dispose?.();
-                if (!faceRes.isOk) return;
-                toolRes = sf.prism(faceRes.value, inwardLocal.multiply(H));
-                faceRes.value.dispose?.();
-            } else {
-                const rxLocal = rWorld / (sx || 1);
-                const ryLocal = rWorld / (sy || 1);
-                const useXAsMajor = rxLocal >= ryLocal;
-                const xvec = useXAsMajor ? plane.xvec : plane.yvec;
-                const major = useXAsMajor ? rxLocal : ryLocal;
-                const minor = useXAsMajor ? ryLocal : rxLocal;
-                const edgeRes = sf.ellipse(plane.normal, centerOnFace, xvec, major, minor);
-                if (!edgeRes.isOk) return;
-                const wireRes = sf.wire([edgeRes.value]); edgeRes.value.dispose?.();
-                if (!wireRes.isOk) return;
-                const faceRes = sf.face([wireRes.value]); wireRes.value.dispose?.();
-                if (!faceRes.isOk) return;
-                toolRes = sf.prism(faceRes.value, inwardLocal.multiply(H));
-                faceRes.value.dispose?.();
-            }
-        } else {
-            const wWorld = Math.max(0.1, parseFloat(panel.querySelector<HTMLInputElement>("#cut-width")!.value) || 0);
-            const hWorld = Math.max(0.1, parseFloat(panel.querySelector<HTMLInputElement>("#cut-height")!.value) || 0);
-            const wLocal = wWorld / (sx || 1);
-            const hLocal = hWorld / (sy || 1);
-            const origin = centerOnFace.add(plane.xvec.multiply(-wLocal * 0.5)).add(plane.yvec.multiply(-hLocal * 0.5));
-            const faceRes = sf.rect(new Plane(origin, plane.normal, plane.xvec), wLocal, hLocal);
+            const r = Math.max(
+                0.1,
+                parseFloat(panel.querySelector<HTMLInputElement>("#cut-radius")!.value) || 0,
+            );
+            const edgeRes = sf.circle(plane.normal, centerOnFace, r);
+            if (!edgeRes.isOk) return;
+            const wireRes = sf.wire([edgeRes.value]);
+            edgeRes.value.dispose?.();
+            if (!wireRes.isOk) return;
+            const faceRes = sf.face([wireRes.value]);
+            wireRes.value.dispose?.();
             if (!faceRes.isOk) return;
+            toolRes = sf.prism(faceRes.value, inwardLocal.multiply(H));
+            faceRes.value.dispose?.();
+        } else if (t === "rect") {
+            const w = Math.max(
+                0.1,
+                parseFloat(panel.querySelector<HTMLInputElement>("#cut-width")!.value) || 0,
+            );
+            const h = Math.max(
+                0.1,
+                parseFloat(panel.querySelector<HTMLInputElement>("#cut-height")!.value) || 0,
+            );
+            const rotDeg = parseFloat(panel.querySelector<HTMLInputElement>("#cut-rot")?.value || "0") || 0;
+            const rotRad = MathUtils.degToRad(rotDeg);
+            const ux = Matrix4.fromAxisRad(centerOnFace, plane.normal, rotRad).ofVector(plane.xvec);
+            const uy = Matrix4.fromAxisRad(centerOnFace, plane.normal, rotRad).ofVector(plane.yvec);
+            const origin = centerOnFace.add(ux.multiply(-w * 0.5)).add(uy.multiply(-h * 0.5));
+            const faceRes = sf.rect(new Plane(origin, plane.normal, ux), w, h);
+            if (!faceRes.isOk) return;
+            toolRes = sf.prism(faceRes.value, inwardLocal.multiply(H));
+            faceRes.value.dispose?.();
+        } else {
+            const A_ = Math.max(
+                0.1,
+                parseFloat(panel.querySelector<HTMLInputElement>("#cut-a")!.value) || 0,
+            );
+            const B_ = Math.max(
+                0.1,
+                parseFloat(panel.querySelector<HTMLInputElement>("#cut-b")!.value) || 0,
+            );
+            const C_ = Math.max(
+                0.1,
+                parseFloat(panel.querySelector<HTMLInputElement>("#cut-c")!.value) || 0,
+            );
+            const rotDeg = parseFloat(panel.querySelector<HTMLInputElement>("#cut-rot")?.value || "0") || 0;
+            const rotRad = MathUtils.degToRad(rotDeg);
+            if (!(A_ + B_ > C_ && A_ + C_ > B_ && B_ + C_ > A_)) return;
+
+            const x = (A_ * A_ + B_ * B_ - C_ * C_) / (2 * A_);
+            const y2 = B_ * B_ - x * x;
+            if (!(y2 > 0)) return;
+            const y = Math.sqrt(y2);
+
+            const R = Matrix4.fromAxisRad(centerOnFace, plane.normal, rotRad);
+            const ux = R.ofVector(plane.xvec);
+            const uy = R.ofVector(plane.yvec);
+
+            const A = centerOnFace.add(ux.multiply(-A_ * 0.5));
+            const B = centerOnFace.add(ux.multiply(A_ * 0.5));
+            const C = centerOnFace.add(ux.multiply(x - A_ * 0.5)).add(uy.multiply(y));
+
+            const e1 = sf.line(A, B);
+            if (!e1.isOk) return;
+            const e2 = sf.line(B, C);
+            if (!e2.isOk) {
+                e1.value.dispose?.();
+                return;
+            }
+            const e3 = sf.line(C, A);
+            if (!e3.isOk) {
+                e1.value.dispose?.();
+                e2.value.dispose?.();
+                return;
+            }
+
+            const wres = sf.wire([e1.value, e2.value, e3.value]);
+            e1.value.dispose?.();
+            e2.value.dispose?.();
+            e3.value.dispose?.();
+            if (!wres.isOk) return;
+
+            const faceRes = sf.face([wres.value]);
+            wres.value.dispose?.();
+            if (!faceRes.isOk) return;
+
             toolRes = sf.prism(faceRes.value, inwardLocal.multiply(H));
             faceRes.value.dispose?.();
         }
@@ -633,7 +930,11 @@ export class Editor extends HTMLElement {
             view.document.addNode(newNode);
         });
 
-        try { view.document.visual.update(); } finally { this.finishCutout(); }
+        try {
+            view.document.visual.update();
+        } finally {
+            this.finishCutout();
+        }
     }
 
     private clearCutoutUI() {
@@ -666,7 +967,8 @@ export class Editor extends HTMLElement {
             new XYZ(bb.min.x, bb.max.y, bb.max.z),
             new XYZ(bb.max.x, bb.max.y, bb.max.z),
         ];
-        let min = Infinity, max = -Infinity;
+        let min = Infinity,
+            max = -Infinity;
         for (const c of corners) {
             const p = u.dot(c);
             if (p < min) min = p;
@@ -743,11 +1045,27 @@ export class Editor extends HTMLElement {
 
         const face = this._cutoutFace;
         if (face && face.owner && face.owner.node) {
-            try { highlighter.removeState(face.owner, VisualState.edgeHighlight, face.shape.shapeType, ...face.indexes); } catch {}
-            try { highlighter.removeState(face.owner, VisualState.edgeSelected, face.shape.shapeType, ...face.indexes); } catch {}
+            try {
+                highlighter.removeState(
+                    face.owner,
+                    VisualState.edgeHighlight,
+                    face.shape.shapeType,
+                    ...face.indexes,
+                );
+            } catch {}
+            try {
+                highlighter.removeState(
+                    face.owner,
+                    VisualState.edgeSelected,
+                    face.shape.shapeType,
+                    ...face.indexes,
+                );
+            } catch {}
         }
 
-        try { highlighter.clear(); } catch {}
+        try {
+            highlighter.clear();
+        } catch {}
     }
 
     private getWorldPlane(): Plane {
@@ -779,8 +1097,8 @@ export class Editor extends HTMLElement {
             button({
                 textContent: "Add",
                 onclick: () => this.startCutoutFlow(),
-                style: "padding:10px 22px; font-size:14px; font-weight:600; border-radius:8px;"
-            })
+                style: "padding:10px 22px; font-size:14px; font-weight:600; border-radius:8px;",
+            }),
         );
     }
 

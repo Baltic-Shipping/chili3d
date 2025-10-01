@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-09-30)
+// See CHANGELOG.md for modifications (updated 2025-10-01)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -272,38 +272,169 @@ async function computeKgByMaterialAsync(
 let loading = new Loading();
 document.body.appendChild(loading);
 
-function createPriceBadge() {
-    const el = document.createElement("div");
-    el.id = "price";
-    el.style.position = "fixed";
-    el.style.right = "12px";
-    el.style.bottom = "12px";
-    el.style.padding = "8px 12px";
-    el.style.background = "#E00C30";
-    el.style.color = "#fff";
-    el.style.borderRadius = "8px";
-    el.style.font = "14px/1.2 sans-serif";
-    el.textContent = "--";
-    document.body.appendChild(el);
-    return el;
-}
+function createQuoteCard() {
+  const card = document.createElement('div');
+  card.id = 'quote-card';
+  card.style.cssText = `
+    position: fixed;
+    right: 12px;
+    bottom: 12px;
+    width: 260px;
+    border-radius: 12px;
+    background: #E00C30;
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(0,0,0,.25);
+    font: 14px/1.2 system-ui, -apple-system, sans-serif;
+    overflow: hidden;
+  `;
 
-function createBuyButton() {
-    const btn = document.createElement("button");
-    btn.id = "buy";
-    btn.textContent = "Buy";
-    btn.style.position = "fixed";
-    btn.style.right = "12px";
-    btn.style.bottom = "54px";
-    btn.style.padding = "8px 12px";
-    btn.style.background = "#111";
-    btn.style.color = "#fff";
-    btn.style.border = "none";
-    btn.style.borderRadius = "8px";
-    btn.style.font = "14px/1.2 sans-serif";
-    btn.style.cursor = "pointer";
-    document.body.appendChild(btn);
-    return btn;
+  const header = document.createElement('div');
+  header.style.cssText = `
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(255,255,255,.25);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  `;
+  
+  const title = document.createElement('span');
+  title.textContent = 'Quote (live)';
+  
+  const buyButton = document.createElement('button');
+  buyButton.id = 'qc-buy';
+  buyButton.textContent = 'Add to cart';
+  buyButton.style.cssText = `
+    background: #fff;
+    color: #E00C30;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-weight: 600;
+    cursor: pointer;
+  `;
+  
+  header.appendChild(title);
+  header.appendChild(buyButton);
+
+  const body = document.createElement('div');
+  body.style.cssText = `
+    padding: 10px 12px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    row-gap: 8px;
+    column-gap: 8px;
+    align-items: center;
+  `;
+
+  const qtyLabel = document.createElement('div');
+  qtyLabel.textContent = 'Qty';
+
+  const qtyControls = document.createElement('div');
+  qtyControls.id = 'qc-qty';
+  qtyControls.style.cssText = `
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    justify-self: end;
+  `;
+
+  const minusButton = document.createElement('button');
+  minusButton.id = 'qc-minus';
+  minusButton.textContent = '–';
+  minusButton.setAttribute('aria-label', 'minus');
+  minusButton.style.cssText = `
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: none;
+    background: rgba(0,0,0,.2);
+    color: #fff;
+    cursor: pointer;
+  `;
+
+  const qtyInput = document.createElement('input');
+  qtyInput.id = 'qc-input';
+  qtyInput.type = 'number';
+  qtyInput.min = '1';
+  qtyInput.max = '100';
+  qtyInput.value = '1';
+  qtyInput.style.cssText = `
+    width: 52px;
+    text-align: center;
+    border: none;
+    border-radius: 6px;
+    padding: 4px 6px;
+    background: #fff;
+    color: #111;
+    font-weight: 700;
+  `;
+
+  const plusButton = document.createElement('button');
+  plusButton.id = 'qc-plus';
+  plusButton.textContent = '+';
+  plusButton.setAttribute('aria-label', 'plus');
+  plusButton.style.cssText = `
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: none;
+    background: rgba(0,0,0,.2);
+    color: #fff;
+    cursor: pointer;
+  `;
+
+  qtyControls.appendChild(minusButton);
+  qtyControls.appendChild(qtyInput);
+  qtyControls.appendChild(plusButton);
+
+  const divider = document.createElement('div');
+  divider.style.cssText = `
+    grid-column: 1 / span 2;
+    border-top: 1px solid rgba(255,255,255,.25);
+    margin-top: 6px;
+  `;
+
+  const totalLabel = document.createElement('div');
+  totalLabel.textContent = 'Total';
+  totalLabel.style.fontWeight = '600';
+
+  const totalValue = document.createElement('div');
+  totalValue.id = 'qc-total';
+  totalValue.textContent = '--';
+  totalValue.style.cssText = `
+    justify-self: end;
+    font-weight: 800;
+    font-size: 16px;
+  `;
+
+  const hint = document.createElement('div');
+  hint.id = 'qc-hint';
+  hint.style.cssText = `
+    grid-column: 1 / span 2;
+    opacity: .85;
+    font-size: 12px;
+  `;
+
+  body.appendChild(qtyLabel);
+  body.appendChild(qtyControls);
+  body.appendChild(divider);
+  body.appendChild(totalLabel);
+  body.appendChild(totalValue);
+  body.appendChild(hint);
+
+  card.appendChild(header);
+  card.appendChild(body);
+  document.body.appendChild(card);
+
+  return {
+    card,
+    buyButton,
+    totalValue,
+    hint,
+    qtyInput,
+    minusButton,
+    plusButton,
+  };
 }
 
 function debounce<T extends (...a: any[]) => any>(fn: T, ms: number) {
@@ -323,9 +454,20 @@ new AppBuilder()
     .build()
     .then(x => {
         document.body.removeChild(loading)
-        const priceEl = createPriceBadge()
-        const buyBtn = createBuyButton();
-        buyBtn.disabled = true;
+        const ui = createQuoteCard();
+        ui.buyButton.disabled = true;
+        let quantity = 1;
+        function clampQuantity(value: number): number {
+          return Math.max(1, Math.min(100, Math.round(value)));
+        }
+        function setQuantity(value: number) {
+          quantity = clampQuantity(value);
+          ui.qtyInput.value = String(quantity);
+          requestQuoteDebounced();
+        }
+        ui.minusButton.onclick = () => setQuantity(quantity - 1);
+        ui.plusButton.onclick = () => setQuantity(quantity + 1);
+        ui.qtyInput.onchange = () => setQuantity(Number(ui.qtyInput.value));
         let lastQuoteId: string | undefined;
         let computeGen = 0;
         const latestGen = () => computeGen;
@@ -335,7 +477,6 @@ new AppBuilder()
         let currentDoc: any = null;
         const odooKeyByMatId = new Map<string, string>();
         let odooList: OdooMat[] = [];
-        const quantity = 1;
         const canQuote = () => inDocument && !!currentDoc && odooList.length > 0;
 
         const colorFromKey = (key: string) => {
@@ -378,7 +519,7 @@ new AppBuilder()
           }
 
           if (!list || !list.length) {
-            priceEl.textContent = "No materials";
+            ui.totalValue.textContent = 'No materials';
             return;
           }
 
@@ -470,7 +611,7 @@ new AppBuilder()
         }
 
         async function requestQuote() {
-            if (!canQuote()) { priceEl.textContent = "Select material"; return; }
+            if (!canQuote()) { return; }
             const myGen = ++computeGen;
             try {
                 rebindMapFromDoc(currentDoc);
@@ -478,59 +619,59 @@ new AppBuilder()
                 const kgByKey = await computeKgByMaterialAsync(currentDoc, odooKeyByMatId, odooList, latestGen, myGen);
                 if (kgByKey === null) return;
                 const materials = Array.from(kgByKey, ([key, q]) => ({ key, quantity: q }));
-                const totalKg = Array.from(kgByKey.values()).reduce((a, b) => a + b, 0)
-                priceEl.title = `~${totalKg.toFixed(3)} kg • ${lastVolSource}`
-                if (materials.length === 0) { priceEl.textContent = "No solids"; return; }
+                if (materials.length === 0) { return; }
                 if (myGen !== latestGen()) return;
-                const res = await ChiliOdoo.quote({ materials, quantity });
+                const res = await ChiliOdoo.quote({ materials, quantity: quantity });
                 lastQuoteId = (res as any)?.quote_id;
                 if (myGen !== latestGen()) return;
                 const fmt = (n: number) => formatMoney(n, res.currency);
-                const hint = Array.isArray(res.items)
-                  ? " [" + res.items
-                      .map((i: any) => `${i.quantity.toFixed(2)}kg×${fmt(i.unit_price)}@${i.key}`)
-                      .join(", ") + "]"
-                  : "";
-                priceEl.textContent = `${fmt(res.total)}${res.min_applied ? " (min)" : ""}${hint}`;
-                buyBtn.disabled = false;
+                ui.totalValue.textContent = `${fmt(res.total)}${res.min_applied ? " (min)" : ""}`;
+                if (Array.isArray(res.items)) {
+                  ui.hint.textContent = res.items
+                    .map((item: any) => `${item.quantity.toFixed(2)}kg × ${fmt(item.unit_price)} @ ${item.key}`)
+                    .join("  ·  ");
+                } else {
+                  ui.hint.textContent = "";
+                }
+
+                ui.buyButton.disabled = false;
             } catch (e:any) {
                 if (myGen !== latestGen()) return;
-                priceEl.textContent = (e?.code === 'RATE_LIMITED') ? 'Cooling down…' : 'Offline';
             }
         }
 
         async function beginCheckout() {
           if (!canQuote()) return;
-          buyBtn.disabled = true;
-          buyBtn.textContent = '...';
+          ui.buyButton.disabled = true;
+          ui.buyButton.textContent = '...';
 
           try {
             rebindMapFromDoc(currentDoc);
             normalizeUnknownMaterials(currentDoc);
             const snapshot = buildVerifySnapshot(currentDoc, odooKeyByMatId);
             const kgByKey = await computeKgByMaterialAsync(currentDoc, odooKeyByMatId, odooList, () => computeGen, ++computeGen);
-            if (!kgByKey || kgByKey.size === 0) { priceEl.textContent = 'No solids'; buyBtn.textContent = 'Buy'; return; }
+            if (!kgByKey || kgByKey.size === 0) { return; }
 
             const materials = kgByKey ? Array.from(kgByKey, ([key, q]) => ({ key, quantity: q })) : [];
             const [cdFile, stepFile] = await Promise.all([
               exportCdFile(currentDoc),
               exportStepFile(currentDoc).catch(() => null),
             ]);
-            const res = await ChiliOdoo.checkout({ snapshot, files: { cd: cdFile, step: stepFile, }, });
-            // window.onbeforeunload = null as any;
-            // (window.top || window).location.href = res.checkout_url || '/shop/checkout';
+            const res = await ChiliOdoo.checkout({ snapshot, quantity: quantity, files: { cd: cdFile, step: stepFile, }, });
+            window.onbeforeunload = null as any;
+            (window.top || window).location.href = res.checkout_url || '/shop/checkout';
           } catch (e:any) {
-            priceEl.textContent = 'Offline';
-            buyBtn.textContent = 'Buy';
+            ui.totalValue.textContent = 'Offline';
+            ui.hint.textContent = '';
           } finally {
             if (document.visibilityState !== 'hidden') {
-              buyBtn.disabled = false;
-              buyBtn.textContent = 'Buy';
+              ui.buyButton.disabled = false;
+              ui.buyButton.textContent = 'Add to cart';
             }
           }
         }
 
-        buyBtn.onclick = beginCheckout;
+        ui.buyButton.onclick = beginCheckout;
 
         const requestQuoteDebounced = debounce(requestQuote, 600);
 
@@ -566,8 +707,7 @@ new AppBuilder()
           if (show) {
             inDocument = false;
             currentDoc = null;
-            priceEl.textContent = "--";
-            priceEl.title = "";
+            ui.totalValue.textContent = '--';
           }
         });
 
@@ -576,8 +716,7 @@ new AppBuilder()
 
           if (!view) {
             currentDoc = null;
-            priceEl.textContent = "--";
-            priceEl.title = "";
+            ui.totalValue.textContent = '--';
             return;
           }
 
@@ -590,7 +729,7 @@ new AppBuilder()
             await requestQuote();
           } catch {
             if (docRef !== currentDoc) return;
-            priceEl.textContent = "Offline";
+            ui.totalValue.textContent = 'Offline';
           }
         });
     })

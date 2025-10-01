@@ -31,3 +31,5 @@
 **2025-08-26**  - bring back confirm dialog to certain actions, improve UX
 **2025-08-29**  - fix commands like 'thick solid' requiring enter key to apply values
 **2025-09-01**  - allow to undo measure functionality
+**2025-09-30**  - various updates in terms of connecting the library with odoo
+**2025-10-01**  - various improvements

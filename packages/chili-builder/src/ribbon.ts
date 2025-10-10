@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-08-11)
+// See CHANGELOG.md for modifications (updated 2025-10-10)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -23,7 +23,6 @@ export const DefaultRibbon: RibbonTab[] = [
             {
                 groupName: "ribbon.group.modify",
                 items: [
-                    "modify.smartScale",
                     "modify.move",
                     "modify.rotate",
                     "modify.mirror",

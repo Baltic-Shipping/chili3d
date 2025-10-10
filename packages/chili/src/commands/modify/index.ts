@@ -1,3 +1,4 @@
+// See CHANGELOG.md for modifications (updated 2025-10-10)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -13,4 +14,3 @@ export * from "./removeSubShapes";
 export * from "./rotate";
 export * from "./split";
 export * from "./trim";
-export * from "./smartScale";

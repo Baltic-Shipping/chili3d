@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-08-22)
+// See CHANGELOG.md for modifications (updated 2025-10-10)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -109,7 +109,6 @@ const I18N_KEYS = [
     "command.modify.split",
     "command.modify.trim",
     "command.modify.cutout",
-    "command.modify.smartScale",
     "command.special.last",
     "command.test.performance",
     "command.wechat.group",

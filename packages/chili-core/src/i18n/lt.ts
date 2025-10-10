@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-08-22)
+// See CHANGELOG.md for modifications (updated 2025-10-10)
 import { Locale } from "./i18n";
 
 export default {
@@ -111,7 +111,6 @@ export default {
         "command.modify.split": "Padalyti",
         "command.modify.trim": "Apipjaustyti",
         "command.modify.cutout": "Išpjauti",
-        "command.modify.smartScale": "Išmanus mastelis",
         "command.special.last": "__Paskutinė_komanda__",
         "command.test.performance": "Našumo testas",
         "command.wechat.group": "Wechat",

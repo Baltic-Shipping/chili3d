@@ -33,3 +33,4 @@
 **2025-09-01**  - allow to undo measure functionality
 **2025-09-30**  - various updates in terms of connecting the library with odoo
 **2025-10-01**  - various improvements
+**2025-10-10**  - remove unecessary stuff

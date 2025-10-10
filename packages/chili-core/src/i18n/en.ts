@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-08-22)
+// See CHANGELOG.md for modifications (updated 2025-10-10)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -114,7 +114,6 @@ export default {
         "command.modify.split": "Split",
         "command.modify.trim": "Trim",
         "command.modify.cutout": "Cut Out",
-        "command.modify.smartScale": "Smart Scale",
         "command.special.last": "__Last_COMMAND__",
         "command.test.performance": "Performance Test",
         "command.wechat.group": "Wechat",

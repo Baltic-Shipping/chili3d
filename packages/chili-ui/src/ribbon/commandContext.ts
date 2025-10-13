@@ -24,7 +24,6 @@ import {
     ICommand,
     IDisposable,
     Localize,
-    Material,
     Observable,
     PathBinding,
     Property,
@@ -33,7 +32,7 @@ import {
 import style from "./commandContext.module.css";
 
 export class CommandContext extends HTMLElement implements IDisposable {
-    private readonly propMap: Map<string | number | symbol, [Property, HTMLElement]> = new Map();
+    private readonly propMap: Map<string | number | symbol, [Property, HTMLElement][]> = new Map();
 
     constructor(readonly command: ICommand) {
         super();
@@ -64,18 +63,20 @@ export class CommandContext extends HTMLElement implements IDisposable {
 
     private readonly onPropertyChanged = (property: string | number | symbol) => {
         if (this.propMap.has(property)) {
-            const [prop, control] = this.propMap.get(property)!;
-            this.setVisible(control, prop);
+            const items = this.propMap.get(property)!;
+            for (const [prop, control] of items) {
+                this.setVisible(control, prop);
+            }
         }
     };
 
     private initContext() {
         const groupMap = new Map<I18nKeys, HTMLDivElement>();
-        Property.getProperties(this.command).forEach((g) => {
-            const group = this.findGroup(groupMap, g);
-            const item = this.createItem(this.command, g);
-            this.setVisible(item, g);
-            this.cacheDependencies(item, g);
+        Property.getProperties(this.command).forEach((property) => {
+            const group = this.findGroup(groupMap, property);
+            const item = this.createItem(this.command, property);
+            this.setVisible(item, property);
+            this.cacheDependencies(item, property);
             group.append(item);
         });
     }
@@ -83,7 +84,8 @@ export class CommandContext extends HTMLElement implements IDisposable {
     private cacheDependencies(item: HTMLElement, g: Property) {
         if (g.dependencies) {
             for (const d of g.dependencies) {
-                this.propMap.set(d.property, [g, item]);
+                const items = this.propMap.get(d.property);
+                this.propMap.set(d.property, [...(items ?? []), [g, item]]);
             }
         }
     }
@@ -98,7 +100,7 @@ export class CommandContext extends HTMLElement implements IDisposable {
                 }
             }
         }
-        control.style.display = visible ? "" : "none";
+        control.style.display = visible ? "inherit" : "none";
     }
 
     private findGroup(groupMap: Map<I18nKeys, HTMLDivElement>, prop: Property) {
@@ -168,16 +170,14 @@ export class CommandContext extends HTMLElement implements IDisposable {
                 type: "text",
                 className: style.input,
                 value: new Binding(noType, g.name),
-                oninput: (e) => {
-                    const el = e.target as HTMLInputElement;
-                    const v = converter ? converter(el.value) : el.value;
-                    if (!(converter && Number.isNaN(v))) noType[g.name] = v;
+                onblur: (e) => {
+                    const input = e.target as HTMLInputElement;
+                    noType[g.name] = converter ? converter(input.value) : input.value;
                 },
                 onkeydown: (e) => {
                     e.stopPropagation();
                     if (e.key === "Enter") {
                         const input = e.target as HTMLInputElement;
-                        noType[g.name] = converter ? converter(input.value) : input.value;
                         input.blur();
                     }
                 },

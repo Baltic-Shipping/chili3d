@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-10-10)
+// See CHANGELOG.md for modifications (updated 2025-10-15)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -46,6 +46,9 @@ export default {
         "ellipsoid.radiusZ": "RadiusZ",
         "ellipse.majorRadius": "major Radius",
         "ellipse.minorRadius": "minor Radius",
+        "checkout.addToCart": "Cart",
+        "checkout.materials": "Materials list",
+        "checkout.total": "Total",
         "command.act.alignCamera": "Align Camera",
         "command.boolean.common": "Intersect",
         "command.boolean.cut": "Cut",
@@ -169,7 +172,7 @@ export default {
         "popupUSection.width": "Width",
         "popupUSection.thickness": "Thickness",
         "popupUSection.length": "Length",
-        "popupHSection.width" : "Width",
+        "popupHSection.width": "Width",
         "popupHSection.height": "Height",
         "popupHSection.flangeThickness": "Flange Thickness",
         "popupHSection.webThickness": "Web Thickness",
@@ -185,11 +188,11 @@ export default {
         "popuptube.outerRadius": "Outer Radius",
         "popuptube.innerRadius": "Inner Radius",
         "popuptube.height": "Height",
-        "popupcylinder.radius": 'Radius',
+        "popupcylinder.radius": "Radius",
         "popupcylinder.height": "Height",
         "popupbox.width": "Width",
         "popupbox.length": "Length",
-        "popupbox.height":  "Height",
+        "popupbox.height": "Height",
         "entity.editable": "Editable Entity",
         "entity.parameter": "Parameter Entity",
         "error.default:{0}": "error: {0}",

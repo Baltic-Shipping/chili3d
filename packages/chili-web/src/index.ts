@@ -1,9 +1,18 @@
-// See CHANGELOG.md for modifications (updated 2025-10-01)
+// See CHANGELOG.md for modifications (updated 2025-10-15)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
 import { AppBuilder } from "chili-builder";
-import { History, Logger, Material, PubSub, Transaction, VisualNode } from "chili-core";
+import {
+    History,
+    I18n,
+    Logger,
+    Material,
+    PubSub,
+    Transaction,
+    VisualNode,
+    getCurrentApplication,
+} from "chili-core";
 import { Loading } from "./loading";
 import { ChiliOdoo } from "./odooApi";
 
@@ -157,7 +166,6 @@ function formatMoney(amount: number, currency: string, locale?: string) {
 type OdooMat = { key: string; name: string; density?: number; basis?: string; uom?: string };
 const METERS_PER_SCENE_UNIT = 0.001;
 const UNIT3_TO_M3 = METERS_PER_SCENE_UNIT ** 3;
-let lastVolSource: "solid" | "mesh" | "bbox" = "solid";
 
 function nodeMeshVolumeM3(n: any): number {
     const faces = n?.mesh?.faces;
@@ -273,168 +281,230 @@ let loading = new Loading();
 document.body.appendChild(loading);
 
 function createQuoteCard() {
-  const card = document.createElement('div');
-  card.id = 'quote-card';
-  card.style.cssText = `
+    const card = document.createElement("div");
+    card.id = "quote-card";
+    card.style.cssText = `
     position: fixed;
     right: 12px;
     bottom: 12px;
     width: 260px;
     border-radius: 12px;
-    background: #E00C30;
-    color: #fff;
+    background: #fff;
     box-shadow: 0 8px 24px rgba(0,0,0,.25);
-    font: 14px/1.2 system-ui, -apple-system, sans-serif;
+    font: 14px Manrope,sans-serif;
     overflow: hidden;
   `;
 
-  const header = document.createElement('div');
-  header.style.cssText = `
-    padding: 10px 12px;
+    const header = document.createElement("div");
+    header.style.cssText = `
     border-bottom: 1px solid rgba(255,255,255,.25);
     display: flex;
     justify-content: space-between;
     align-items: center;
   `;
-  
-  const title = document.createElement('span');
-  title.textContent = 'Quote (live)';
-  
-  const buyButton = document.createElement('button');
-  buyButton.id = 'qc-buy';
-  buyButton.textContent = 'Add to cart';
-  buyButton.style.cssText = `
-    background: #fff;
-    color: #E00C30;
-    border: none;
-    border-radius: 8px;
-    padding: 6px 10px;
-    font-weight: 600;
-    cursor: pointer;
-  `;
-  
-  header.appendChild(title);
-  header.appendChild(buyButton);
 
-  const body = document.createElement('div');
-  body.style.cssText = `
-    padding: 10px 12px;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    row-gap: 8px;
-    column-gap: 8px;
-    align-items: center;
-  `;
-
-  const qtyLabel = document.createElement('div');
-  qtyLabel.textContent = 'Qty';
-
-  const qtyControls = document.createElement('div');
-  qtyControls.id = 'qc-qty';
-  qtyControls.style.cssText = `
+    const body = document.createElement("div");
+    body.style.cssText = `
+    padding: 12px;
     display: flex;
-    gap: 6px;
-    align-items: center;
-    justify-self: end;
+    flex-direction: column;
+    gap: 12px;
   `;
 
-  const minusButton = document.createElement('button');
-  minusButton.id = 'qc-minus';
-  minusButton.textContent = '–';
-  minusButton.setAttribute('aria-label', 'minus');
-  minusButton.style.cssText = `
-    width: 28px;
-    height: 28px;
+    const qtyControls = document.createElement("div");
+    qtyControls.id = "qc-qty";
+    qtyControls.style.cssText = `
+    height: 38px;
+    display: flex;
+    align-items: stretch;
+    align-self: flex-end;
+    background: #fff;
+    border-radius: 5px;
+    border: 1px solid #d5d5d5;
+    overflow: hidden;
+  `;
+
+    const materialsSection = document.createElement("div");
+    materialsSection.style.cssText = `
+    border: 1px solid #e0e0e0;
     border-radius: 6px;
-    border: none;
-    background: rgba(0,0,0,.2);
-    color: #fff;
-    cursor: pointer;
+    overflow: hidden;
+    background: #fafafa;
   `;
 
-  const qtyInput = document.createElement('input');
-  qtyInput.id = 'qc-input';
-  qtyInput.type = 'number';
-  qtyInput.min = '1';
-  qtyInput.max = '100';
-  qtyInput.value = '1';
-  qtyInput.style.cssText = `
-    width: 52px;
+    const materialsHeader = document.createElement("div");
+    materialsHeader.style.cssText = `
+    padding: 10px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    transition: background .2s;
+  `;
+    materialsHeader.onmouseenter = () => (materialsHeader.style.background = "#f0f0f0");
+    materialsHeader.onmouseleave = () => (materialsHeader.style.background = "transparent");
+
+    const materialsTitle = document.createElement("span");
+    I18n.set(materialsTitle, "textContent", "checkout.materials");
+    materialsTitle.style.cssText = `font-weight: 600; color: #333; font-size: 13px;`;
+
+    const materialsToggle = document.createElement("span");
+    materialsToggle.textContent = "▼";
+    materialsToggle.style.cssText = `font-size: 18px; color: #666; transition: transform .2s;`;
+
+    materialsHeader.appendChild(materialsTitle);
+    materialsHeader.appendChild(materialsToggle);
+
+    const materialsList = document.createElement("div");
+    materialsList.style.cssText = `
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height .3s ease-out;
+    background: #fff;
+  `;
+
+    let isExpanded = false;
+    materialsHeader.onclick = () => {
+        isExpanded = !isExpanded;
+        materialsList.style.maxHeight = isExpanded ? "200px" : "0";
+        materialsList.style.overflowY = isExpanded ? "auto" : "hidden";
+        materialsList.style.borderTop = isExpanded ? "1px solid #e0e0e0" : "none";
+        materialsToggle.style.transform = isExpanded ? "rotate(180deg)" : "rotate(0)";
+    };
+
+    materialsSection.appendChild(materialsHeader);
+    materialsSection.appendChild(materialsList);
+
+    const minusButton = document.createElement("button");
+    minusButton.id = "qc-minus";
+    minusButton.textContent = "–";
+    minusButton.setAttribute("aria-label", "minus");
+    minusButton.style.cssText = `
+    width: 30px;
+    height: 100%;
+    border: none;
+    background: #fff;
+    color: #111;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: 600;
+    transition: background .2s;
+  `;
+    minusButton.onmouseenter = () => (minusButton.style.background = "#f5f5f5");
+    minusButton.onmouseleave = () => (minusButton.style.background = "#fff");
+
+    const qtyInput = document.createElement("input");
+    qtyInput.id = "qc-input";
+    qtyInput.type = "number";
+    qtyInput.min = "1";
+    qtyInput.max = "100";
+    qtyInput.value = "1";
+    qtyInput.style.cssText = `
+    width: 40px;
     text-align: center;
     border: none;
-    border-radius: 6px;
-    padding: 4px 6px;
+    padding: 6px 4px;
     background: #fff;
     color: #111;
     font-weight: 700;
+    -moz-appearance: textfield;
   `;
 
-  const plusButton = document.createElement('button');
-  plusButton.id = 'qc-plus';
-  plusButton.textContent = '+';
-  plusButton.setAttribute('aria-label', 'plus');
-  plusButton.style.cssText = `
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
+    const style = document.createElement("style");
+    style.textContent = `
+    #qc-input::-webkit-outer-spin-button,
+    #qc-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+  `;
+    document.head.appendChild(style);
+
+    const plusButton = document.createElement("button");
+    plusButton.id = "qc-plus";
+    plusButton.textContent = "+";
+    plusButton.setAttribute("aria-label", "plus");
+    plusButton.style.cssText = `
+    width: 30px;
+    height: 100%;
     border: none;
-    background: rgba(0,0,0,.2);
-    color: #fff;
+    background: #fff;
+    color: #111;
     cursor: pointer;
+    font-size: 18px;
+    font-weight: 600;
+    transition: background .2s;
+  `;
+    plusButton.onmouseenter = () => (plusButton.style.background = "#f5f5f5");
+    plusButton.onmouseleave = () => (plusButton.style.background = "#fff");
+
+    qtyControls.appendChild(minusButton);
+    qtyControls.appendChild(qtyInput);
+    qtyControls.appendChild(plusButton);
+
+    const totalRow = document.createElement("div");
+    totalRow.style.cssText = `
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-top: 1px solid #e0e0e0;
   `;
 
-  qtyControls.appendChild(minusButton);
-  qtyControls.appendChild(qtyInput);
-  qtyControls.appendChild(plusButton);
-
-  const divider = document.createElement('div');
-  divider.style.cssText = `
-    grid-column: 1 / span 2;
-    border-top: 1px solid rgba(255,255,255,.25);
-    margin-top: 6px;
+    const totalLabel = document.createElement("div");
+    I18n.set(totalLabel, "textContent", "checkout.total");
+    totalLabel.style.cssText = `
+    font-weight: 600;
+    color: #666;
   `;
 
-  const totalLabel = document.createElement('div');
-  totalLabel.textContent = 'Total';
-  totalLabel.style.fontWeight = '600';
-
-  const totalValue = document.createElement('div');
-  totalValue.id = 'qc-total';
-  totalValue.textContent = '--';
-  totalValue.style.cssText = `
-    justify-self: end;
+    const totalValue = document.createElement("div");
+    totalValue.id = "qc-total";
+    totalValue.textContent = "--";
+    totalValue.style.cssText = `
     font-weight: 800;
-    font-size: 16px;
+    font-size: 18px;
+    color: #111;
   `;
 
-  const hint = document.createElement('div');
-  hint.id = 'qc-hint';
-  hint.style.cssText = `
-    grid-column: 1 / span 2;
-    opacity: .85;
-    font-size: 12px;
+    totalRow.appendChild(totalLabel);
+    totalRow.appendChild(totalValue);
+
+    const buyButton = document.createElement("button");
+    buyButton.id = "qc-buy";
+    I18n.set(buyButton, "textContent", "checkout.addToCart");
+    buyButton.style.cssText = `
+    background: #E00C30;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px;
+    width: 100%;
+    font: bold 14px Manrope,sans-serif;
+    cursor: pointer;
+    transition: background .2s;
   `;
+    buyButton.onmouseenter = () => (buyButton.style.background = "#c00a28");
+    buyButton.onmouseleave = () => (buyButton.style.background = "#E00C30");
 
-  body.appendChild(qtyLabel);
-  body.appendChild(qtyControls);
-  body.appendChild(divider);
-  body.appendChild(totalLabel);
-  body.appendChild(totalValue);
-  body.appendChild(hint);
+    body.appendChild(qtyControls);
+    body.appendChild(materialsSection);
+    body.appendChild(totalRow);
+    body.appendChild(buyButton);
+    card.appendChild(header);
+    card.appendChild(body);
+    document.body.appendChild(card);
 
-  card.appendChild(header);
-  card.appendChild(body);
-  document.body.appendChild(card);
-
-  return {
-    card,
-    buyButton,
-    totalValue,
-    hint,
-    qtyInput,
-    minusButton,
-    plusButton,
-  };
+    return {
+        card,
+        buyButton,
+        totalValue,
+        qtyInput,
+        minusButton,
+        plusButton,
+        materialsList,
+    };
 }
 
 function debounce<T extends (...a: any[]) => any>(fn: T, ms: number) {
@@ -625,15 +695,42 @@ new AppBuilder()
                 lastQuoteId = (res as any)?.quote_id;
                 if (myGen !== latestGen()) return;
                 const fmt = (n: number) => formatMoney(n, res.currency);
-                ui.totalValue.textContent = `${fmt(res.total)}${res.min_applied ? " (min)" : ""}`;
-                if (Array.isArray(res.items)) {
-                  ui.hint.textContent = res.items
-                    .map((item: any) => `${item.quantity.toFixed(2)}kg × ${fmt(item.unit_price)} @ ${item.key}`)
-                    .join("  ·  ");
-                } else {
-                  ui.hint.textContent = "";
+                ui.totalValue.textContent = `${fmt(res.total)}`;
+                ui.materialsList.innerHTML = '';
+                if (res.items && Array.isArray(res.items)) {
+                  res.items.forEach((item: any) => {
+                    const material = odooList.find(m => m.key === item.key);
+                    const materialName = material?.name || item.key;
+                    
+                    const row = document.createElement('div');
+                    row.style.cssText = `
+                      padding: 10px 12px;
+                      display: grid;
+                      grid-template-columns: 1fr auto auto;
+                      gap: 12px;
+                      align-items: center;
+                      border-bottom: 1px solid #f0f0f0;
+                      font-size: 13px;
+                    `;
+                    
+                    const name = document.createElement('span');
+                    name.textContent = materialName;
+                    name.style.cssText = `color: #333; font-weight: 500;`;
+                    
+                    const qty = document.createElement('span');
+                    qty.textContent = `${item.quantity.toFixed(2)} kg`;
+                    qty.style.cssText = `color: #666; text-align: right; font-size: 12px;`;
+                    
+                    const price = document.createElement('span');
+                    price.textContent = fmt(item.subtotal);
+                    price.style.cssText = `font-weight: 600; color: #333; text-align: right; min-width: 60px;`;
+                    
+                    row.appendChild(name);
+                    row.appendChild(qty);
+                    row.appendChild(price);
+                    ui.materialsList.appendChild(row);
+                  });
                 }
-
                 ui.buyButton.disabled = false;
             } catch (e:any) {
                 if (myGen !== latestGen()) return;
@@ -652,17 +749,22 @@ new AppBuilder()
             const kgByKey = await computeKgByMaterialAsync(currentDoc, odooKeyByMatId, odooList, () => computeGen, ++computeGen);
             if (!kgByKey || kgByKey.size === 0) { return; }
 
-            const materials = kgByKey ? Array.from(kgByKey, ([key, q]) => ({ key, quantity: q })) : [];
+            const clientKgByKey: Record<string, number> = {};
+            kgByKey.forEach((kg, key) => {
+              clientKgByKey[key] = kg;
+            });
+
             const [cdFile, stepFile] = await Promise.all([
               exportCdFile(currentDoc),
               exportStepFile(currentDoc).catch(() => null),
             ]);
-            const res = await ChiliOdoo.checkout({ snapshot, quantity: quantity, files: { cd: cdFile, step: stepFile, }, });
+
+            const res = await ChiliOdoo.checkout({ snapshot, quantity: quantity, client_kg_by_key: clientKgByKey, files: { cd: cdFile, step: stepFile },});
+            
             window.onbeforeunload = null as any;
             (window.top || window).location.href = res.checkout_url || '/shop/checkout';
-          } catch (e:any) {
+          } catch (e: any) {
             ui.totalValue.textContent = 'Offline';
-            ui.hint.textContent = '';
           } finally {
             if (document.visibilityState !== 'hidden') {
               ui.buyButton.disabled = false;
@@ -708,6 +810,22 @@ new AppBuilder()
             inDocument = false;
             currentDoc = null;
             ui.totalValue.textContent = '--';
+          } else {
+            const view = getCurrentApplication()?.activeView;
+            inDocument = !!view
+            currentDoc = view?.document ?? null;
+
+            if (currentDoc) {
+              (async () => {
+                const docRef = currentDoc;
+                try {
+                  await syncMaterialsToDocument(docRef);
+                  if (docRef === currentDoc) await requestQuote();
+                } catch {
+                  if (docRef === currentDoc ) ui.totalValue.textContent = 'Offline';
+                }
+              })();
+            }
           }
         });
 

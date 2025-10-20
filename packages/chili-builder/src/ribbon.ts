@@ -12,9 +12,9 @@ export const DefaultRibbon: RibbonTab[] = [
                 groupName: "ribbon.group.draw",
                 items: [
                     "create.line",
-                    "create.arc",
-                    "create.rect",
-                    "create.circle",
+                    "create.extrude",
+                    ["create.arc", "create.rect", "create.circle"],
+                    ["create.loft", "create.sweep", "create.revol"],
                     ["create.ellipse", "create.bezier", "create.polygon"],
                     ["create.box", "create.pyramid", "create.cylinder"],
                     ["create.cone", "create.sphere", "create.thickSolid"],
@@ -24,9 +24,7 @@ export const DefaultRibbon: RibbonTab[] = [
                 groupName: "ribbon.group.modify",
                 items: [
                     "modify.move",
-                    "modify.rotate",
-                    "modify.mirror",
-                    "modify.array",
+                    ["modify.rotate", "modify.mirror", "modify.array"],
                     ["modify.split", "modify.break", "modify.trim"],
                     ["modify.fillet", "modify.chamfer", "modify.explode"],
                     ["modify.deleteNode", "modify.removeShapes", "modify.removeFeature"],
@@ -35,14 +33,7 @@ export const DefaultRibbon: RibbonTab[] = [
             },
             {
                 groupName: "ribbon.group.converter",
-                items: [
-                    "create.extrude",
-                    "convert.sweep",
-                    "convert.revol",
-                    "convert.toWire",
-                    "convert.curveProjection",
-                    ["convert.toFace", "convert.toShell", "convert.toSolid"],
-                ],
+                items: ["convert.toWire", ["convert.toFace", "convert.toShell", "convert.toSolid"]],
             },
             {
                 groupName: "ribbon.group.boolean",
@@ -57,7 +48,11 @@ export const DefaultRibbon: RibbonTab[] = [
             },
             {
                 groupName: "ribbon.group.tools",
-                items: ["create.group", ["create.section", "create.offset", "create.copyShape"]],
+                items: [
+                    "convert.curveProjection",
+                    "create.group",
+                    ["create.section", "create.offset", "create.copyShape"],
+                ],
             },
             {
                 groupName: "ribbon.group.measure",

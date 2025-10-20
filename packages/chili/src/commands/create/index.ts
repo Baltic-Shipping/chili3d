@@ -12,7 +12,7 @@ export * from "./copySubShape";
 export * from "./curveProjection";
 export * from "./cylinder";
 export * from "./ellipse";
-export * from "./fuse";
+export * from "./loft";
 export * from "./group";
 export * from "./line";
 export * from "./offset";

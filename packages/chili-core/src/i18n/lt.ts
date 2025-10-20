@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-10-15)
+// See CHANGELOG.md for modifications (updated 2025-10-20)
 import { Locale } from "./i18n";
 
 export default {
@@ -51,8 +51,8 @@ export default {
         "command.boolean.cut": "Iškirpti",
         "command.boolean.join": "Jungti",
         "command.convert.fuse": "Į būlinę sąjungą",
-        "command.convert.revol": "Į sukimo apie ašį operaciją",
-        "command.convert.sweep": "Į išstūmimą palei kelią",
+        "command.create.revol": "Į sukimo apie ašį operaciją",
+        "command.create.sweep": "Į išstūmimą palei kelią",
         "command.convert.toFace": "Į paviršių",
         "command.convert.toShell": "Į apvalkalą",
         "command.convert.toSolid": "Į kietąjį kūną",
@@ -79,6 +79,7 @@ export default {
         "command.create.folder": "Aplankas",
         "command.create.group": "Grupuoti",
         "command.create.line": "Linija",
+        "command.create.loft": "Loft",
         "command.create.offset": "Poslinkis",
         "command.create.polygon": "Polilinija",
         "command.create.pyramid": "Piramidė",
@@ -234,9 +235,12 @@ export default {
         "material.metalnessMap": "Metalingumo žemėlapis",
         "material.roughness": "Šiurkštumas",
         "model.visible": "Matomas",
+        "option.command.continuity": "Continuity",
         "option.command.circularPattern": "Apskritiminis modelis",
         "option.command.repeat": "Kartoti",
         "option.command.isFace": "Paviršius",
+        "option.command.isSolid": "Solid",
+        "option.command.isRuled": "Ruled",
         "option.command.isRoundCorner": "Apvalus kampas",
         "option.command.thickness": "Storis",
         "option.command.isConnected": "Prijungta",

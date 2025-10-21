@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-10-15)
+// See CHANGELOG.md for modifications (updated 2025-10-21)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -97,7 +97,7 @@ export default {
         "command.edit.redo": "Redo",
         "command.edit.undo": "Undo",
         "command.file.export": "Export",
-        "command.file.import": "Import a STEP, IGES, BREP, STL",
+        "command.file.import": "Import",
         "command.measure.angle": "Angle",
         "command.measure.length": "Length",
         "command.measure.select": "Select",
@@ -306,7 +306,6 @@ export default {
         "statusBar.tracking": "Tracking",
         "templates.cutout": "Cut out:",
         "templates.selectTemplate": "Select a template:",
-        "templates.drawFreeForm": "Draw free form:",
         "templates.properties": "Properties:",
         "templates.toggle.showMeasurements": "Show measurements",
         "toast.command.{0}excuting": "Command {0} is runing",

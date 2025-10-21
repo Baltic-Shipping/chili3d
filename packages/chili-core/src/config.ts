@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-08-19)
+// See CHANGELOG.md for modifications (updated 2025-10-21)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -117,15 +117,6 @@ export class Config extends Observable {
             this.saveToStorage();
         });
     }
-
-    @Serializer.serialze()
-    get advancedMode() {
-        return this.getPrivateValue("advancedMode", true);
-    }
-    set advancedMode(v: boolean) {
-        this.setProperty("advancedMode", v, () => this.saveToStorage());
-    }
-
 
     @Serializer.serialze()
     get navigation3DIndex() {

@@ -1,11 +1,10 @@
-// See CHANGELOG.md for modifications (updated 2025-09-30)
+// See CHANGELOG.md for modifications (updated 2025-10-21)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
 import { button, div, Expander, input, label } from "chili-controls";
 import {
     AsyncController,
-    Binding,
     Button,
     ButtonSize,
     Command,
@@ -16,7 +15,6 @@ import {
     I18n,
     I18nKeys,
     IApplication,
-    IConverter,
     IDocument,
     IElementarySurface,
     IFace,
@@ -27,7 +25,6 @@ import {
     Orientation,
     Plane,
     PubSub,
-    Result,
     RibbonTab,
     ShapeNode,
     ShapeType,
@@ -51,11 +48,7 @@ import { Statusbar } from "./statusbar";
 import { LayoutViewport } from "./viewport";
 
 let quickCommands: CommandKeys[] = ["doc.save", "doc.saveToFile", "edit.undo", "edit.redo"];
-class BoolToDisplay implements IConverter<boolean> {
-    convert(value: boolean): Result<string> {
-        return Result.ok(value ? "" : "none");
-    }
-}
+
 export class Editor extends HTMLElement {
     readonly ribbonContent: RibbonDataContent;
     private readonly _selectionController: OKCancel;
@@ -64,7 +57,6 @@ export class Editor extends HTMLElement {
     private _isResizingSidebar: boolean = false;
     private _templateSidebarEl: HTMLDivElement | null = null;
     private _sidebarEl: HTMLDivElement | null = null;
-    private _cutoutExpander?: Expander;
     private _cutoutPanel?: HTMLDivElement;
     private _cutoutPreviewId?: number;
     private _cutoutFace?: VisualShapeData;
@@ -117,46 +109,6 @@ export class Editor extends HTMLElement {
             ),
         );
         templateCommands.forEach((cmd) => {
-            const btn = RibbonButton.fromCommandName(cmd, ButtonSize.large);
-            if (!btn) return;
-            btn.classList.add(style.hasTooltip);
-            const data = Command.getData(cmd);
-            if (data) {
-                const key = `command.${data.key}` as I18nKeys;
-                const apply = () => btn.setAttribute("data-tooltip", I18n.translate(key));
-                apply();
-                const onLangChanged = (property: keyof Config) => {
-                    if (property === "languageIndex") apply();
-                };
-                Config.instance.onPropertyChanged(onLangChanged);
-            }
-            btn.querySelectorAll("span, label").forEach((el) => el.remove());
-            btn.removeAttribute("title");
-            contentPanel.append(btn);
-        });
-        contentPanel.append(
-            div(
-                {
-                    style: "grid-column: 1 / -1; margin-top:12px; padding-top:12px; border-top:1px solid #ddd;",
-                },
-                div(
-                    { style: "font-size:16px; font-weight:700; margin-bottom:8px;" },
-                    label({ textContent: new Localize("templates.drawFreeForm") }),
-                ),
-            ),
-        );
-        const freeFormCommands: CommandKeys[] = [
-            "create.line",
-            "create.arc",
-            "create.rect",
-            "create.circle",
-            "create.ellipse",
-            "create.bezier",
-            "create.polygon",
-            "create.thickSolid",
-            "file.import",
-        ];
-        freeFormCommands.forEach((cmd) => {
             const btn = RibbonButton.fromCommandName(cmd, ButtonSize.large);
             if (!btn) return;
             btn.classList.add(style.hasTooltip);
@@ -250,10 +202,7 @@ export class Editor extends HTMLElement {
         this._sidebarEl = div(
             {
                 className: style.sidebar,
-                style: {
-                    width: `${this._sidebarWidth}px`,
-                    display: new Binding(Config.instance, "advancedMode", new BoolToDisplay()),
-                },
+                style: `width: ${this._sidebarWidth}px;`,
             },
             new ProjectView({ className: style.sidebarItem }),
             new PropertyView({ className: style.sidebarItem }),
@@ -818,9 +767,6 @@ export class Editor extends HTMLElement {
         const H = through ? span + 2 * eps : Math.max(0.1, depthIn);
 
         const t = panel.querySelector<HTMLInputElement>("#cut-type")!.value || "circle";
-
-        const sx = T.ofVector(plane.xvec).length();
-        const sy = T.ofVector(plane.yvec).length();
 
         let toolRes;
 

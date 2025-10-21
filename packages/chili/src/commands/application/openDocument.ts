@@ -1,3 +1,4 @@
+// See CHANGELOG.md for modifications (updated 2025-10-21)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -18,6 +19,7 @@ export class OpenDocument implements ICommand {
                     let json: Serialized = JSON.parse(files.value[0].data);
                     let document = await app.loadDocument(json);
                     document?.application.activeView?.cameraController.fitContent();
+                    await document?.save();
                 }
             },
             "toast.excuting{0}",

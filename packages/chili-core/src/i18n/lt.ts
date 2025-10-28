@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-10-20)
+// See CHANGELOG.md for modifications (updated 2025-10-28)
 import { Locale } from "./i18n";
 
 export default {
@@ -129,6 +129,7 @@ export default {
         "common.back": "Atgal",
         "common.isGroup": "Grupė",
         "common.language": "Kalba",
+        "common.location": "Vieta",
         "common.3DNavigation": "3D navigacija",
         "common.theme": "Tema",
         "common.theme.light": "Šviesi",

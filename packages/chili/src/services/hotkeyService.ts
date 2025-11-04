@@ -51,17 +51,23 @@ export class HotkeyService implements IService {
         Logger.info(`${HotkeyService.name} stoped`);
     }
 
+    protected canHandleKey(e: KeyboardEvent): boolean {
+        return true;
+    }
+
     private readonly eventHandlerKeyDown = (e: KeyboardEvent) => {
         const t = e.target as HTMLElement | null;
         if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || (t as any).isContentEditable || t.closest?.("input,textarea,select,[contenteditable='true']"))) {
             return;
         }
+        if (!this.canHandleKey(e)) return;
+
         e.preventDefault();
         const visual = this.app?.activeView?.document?.visual;
         const view = this.app?.activeView;
         if (view && visual) {
-            visual.eventHandler.keyDown(view, e);
-            visual.viewHandler.keyDown(view, e);
+            if (visual.eventHandler.isEnabled) visual.eventHandler.keyDown(view, e);
+            if (visual.viewHandler.isEnabled) visual.viewHandler.keyDown(view, e);
             if (this.app!.executingCommand) e.stopImmediatePropagation();
         }
     };
@@ -71,6 +77,8 @@ export class HotkeyService implements IService {
         if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || (t as any).isContentEditable || t.closest?.("input,textarea,select,[contenteditable='true']"))) {
             return;
         }
+        if (!this.canHandleKey(e)) return;
+
         e.preventDefault();
         const command = this.getCommand(e);
         if (command !== undefined) {

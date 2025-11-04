@@ -30,6 +30,8 @@ export abstract class SelectionHandler implements IEventHandler {
     protected mouse = { isDown: false, x: 0, y: 0 };
     protected readonly pointerEventMap: Map<number, PointerEvent> = new Map();
 
+    isEnabled = true;
+
     constructor(
         readonly document: IDocument,
         readonly multiMode: boolean,
@@ -92,7 +94,7 @@ export abstract class SelectionHandler implements IEventHandler {
     private initRect(event: PointerEvent): SelectionRect {
         const rect = document.createElement("div");
         rect.style.cssText = SelectionRectStyle;
-        document.body.appendChild(rect);
+        this.document.application.mainWindow?.dom.appendChild(rect);
         return { element: rect, clientX: event.clientX, clientY: event.clientY };
     }
 

@@ -34,6 +34,8 @@ export abstract class SnapEventHandler<D extends SnapData = SnapData> implements
     protected _snaped?: SnapResult;
     private _state: SnapState = SnapState.Idle;
 
+    isEnabled: boolean = true;
+
     constructor(
         readonly document: IDocument,
         readonly controller: AsyncController,

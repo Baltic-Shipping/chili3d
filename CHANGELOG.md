@@ -36,3 +36,4 @@
 **2025-10-10** - remove unecessary stuff
 **2025-10-15** - update translations, improve the UI of the quote card, fix some bugs
 **2025-10-21** - remove toggle, update translations, remove draw free form section, add autosave
+**2025-11-12** - various changes

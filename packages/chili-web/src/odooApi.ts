@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-09-30)
+// See CHANGELOG.md for modifications (updated 2025-11-12)
 let token: string | undefined;
 
 class ApiError extends Error {
@@ -23,9 +23,11 @@ async function doPost(url: string, body?: unknown, useToken?: boolean) {
     const rpcBody = { jsonrpc: "2.0", params: body || {} };
     const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(rpcBody) });
     const payload = await parse(res);
-    if (payload && payload.ok === false) {
+
+    if (payload && payload.ok === false && payload.code !== "VALIDATION_FAILED") {
         throw new ApiError(payload.message || payload.code || "Error", payload.code || "ERROR", 200);
     }
+
     return payload;
 }
 
@@ -63,15 +65,17 @@ export const ChiliOdoo = {
         }
     },
 
-    async materials() {
+    async materials(language?: string) {
         if (!token) await this.bootstrap();
 
+        const payload = language ? { lang: language } : {};
+
         try {
-            return await doPost("/self-checkout/api/materials", {}, true);
+            return await doPost("/self-checkout/api/materials", payload, true);
         } catch (e: any) {
             if (e?.code === "UNAUTHORIZED") {
                 await this.bootstrap();
-                return await doPost("/self-checkout/api/materials", {}, true);
+                return await doPost("/self-checkout/api/materials", payload, true);
             }
             throw e;
         }

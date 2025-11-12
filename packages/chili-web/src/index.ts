@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-10-15)
+// See CHANGELOG.md for modifications (updated 2025-11-12)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -16,8 +16,11 @@ import {
 import { Loading } from "./loading";
 import { ChiliOdoo } from "./odooApi";
 
-const MATERIALS_CACHE_KEY = "chili:lastMaterials";
-const SLICE_MS = 8;
+const MATERIALS_CACHE_BASE_KEY = "chili:lastMaterials";
+
+function materialsCacheKey(lang: string | undefined) {
+    return lang ? `${MATERIALS_CACHE_BASE_KEY}:${lang}` : MATERIALS_CACHE_BASE_KEY;
+}
 
 type VerifyNode = {
     world: number[];
@@ -31,6 +34,14 @@ type VerifySnapshot = {
     units: "mm";
     materials: Record<string, string>;
     nodes: VerifyNode[];
+};
+
+type PartData = {
+    thickness: number;
+    width: number;
+    height: number;
+    area: number;
+    materialKey: string;
 };
 
 function getAllVisualNodes(doc: any): VisualNode[] {
@@ -147,13 +158,6 @@ export function buildVerifySnapshot(doc: any, odooKeyByMatId: Map<string, string
     return { version: 1, units: "mm", materials: matMap, nodes };
 }
 
-function nowMs() {
-    return typeof performance !== "undefined" && performance.now ? performance.now() : Date.now();
-}
-function sleep0() {
-    return new Promise<void>((r) => setTimeout(r, 0));
-}
-
 function formatMoney(amount: number, currency: string, locale?: string) {
     const loc = locale || (typeof navigator !== "undefined" ? navigator.language : "en-US");
     try {
@@ -163,118 +167,98 @@ function formatMoney(amount: number, currency: string, locale?: string) {
     }
 }
 
-type OdooMat = { key: string; name: string; density?: number; basis?: string; uom?: string };
-const METERS_PER_SCENE_UNIT = 0.001;
-const UNIT3_TO_M3 = METERS_PER_SCENE_UNIT ** 3;
+type OdooMat = { key: string; name: string; color?: string; density?: number; basis?: string; uom?: string };
 
-function nodeMeshVolumeM3(n: any): number {
-    const faces = n?.mesh?.faces;
-    if (!faces || !faces.position?.length) return 0;
+function getPartDimensions(node: any): [number, number, number] | null {
+    const faces = node?.mesh?.faces;
+    if (!faces || !faces.position?.length) return null;
 
     const pos = faces.position as Float32Array;
-    const idx = faces.index && faces.index.length ? (faces.index as Uint32Array) : null;
 
-    let vol = 0;
-    const tri = (i1: number, i2: number, i3: number) => {
-        const x1 = pos[i1 * 3],
-            y1 = pos[i1 * 3 + 1],
-            z1 = pos[i1 * 3 + 2];
-        const x2 = pos[i2 * 3],
-            y2 = pos[i2 * 3 + 1],
-            z2 = pos[i2 * 3 + 2];
-        const x3 = pos[i3 * 3],
-            y3 = pos[i3 * 3 + 1],
-            z3 = pos[i3 * 3 + 2];
-        vol += (x1 * y2 * z3 + x2 * y3 * z1 + x3 * y1 * z2 - x1 * y3 * z2 - x2 * y1 * z3 - x3 * y2 * z1) / 6;
-    };
+    let minX = Infinity,
+        maxX = -Infinity;
+    let minY = Infinity,
+        maxY = -Infinity;
+    let minZ = Infinity,
+        maxZ = -Infinity;
 
-    if (idx) {
-        for (let k = 0; k < idx.length; k += 3) tri(idx[k], idx[k + 1], idx[k + 2]);
-    } else {
-        for (let i = 0; i < pos.length / 3; i += 3) tri(i, i + 1, i + 2);
+    for (let i = 0; i < pos.length; i += 3) {
+        const x = pos[i];
+        const y = pos[i + 1];
+        const z = pos[i + 2];
+
+        minX = Math.min(minX, x);
+        maxX = Math.max(maxX, x);
+        minY = Math.min(minY, y);
+        maxY = Math.max(maxY, y);
+        minZ = Math.min(minZ, z);
+        maxZ = Math.max(maxZ, z);
     }
 
-    const detWorld = Math.abs(n?.worldTransform?.().determinant?.() ?? 1);
-    return Math.abs(vol) * detWorld * UNIT3_TO_M3;
+    const sizeX = maxX - minX;
+    const sizeY = maxY - minY;
+    const sizeZ = maxZ - minZ;
+
+    return [sizeX, sizeY, sizeZ];
 }
 
-function apportionByFaceCount(node: any): Map<string, number> {
-    const out = new Map<string, number>();
-    const mat = node?.materialId;
-    const pairs: Array<{ faceIndex: number; materialIndex: number }> = node?.faceMaterialPair ?? [];
-    if (!Array.isArray(mat)) {
-        if (typeof mat === "string" && mat) out.set(mat, 1);
-        return out;
+function detectThickness(
+    dimensions: [number, number, number],
+): { thickness: number; width: number; height: number } | null {
+    const [a, b, c] = dimensions.sort((x, y) => x - y);
+
+    const THINNESS_RATIO = 0.2;
+    if (a / b <= THINNESS_RATIO) {
+        return { thickness: a, width: b, height: c };
     }
-    if (!pairs.length) {
-        const w = 1 / mat.length;
-        for (let i = 0; i < mat.length; i++) out.set(mat[i], w);
-        return out;
-    }
-    const counts = new Map<number, number>();
-    for (const p of pairs) counts.set(p.materialIndex, (counts.get(p.materialIndex) || 0) + 1);
-    const total = Array.from(counts.values()).reduce((a, b) => a + b, 0) || 1;
-    for (const [mi, c] of counts) {
-        const id = mat[mi];
-        if (id) out.set(id, c / total);
-    }
-    return out;
+
+    return null;
 }
 
-async function computeKgByMaterialAsync(
+async function computePartDataAsync(
     doc: any,
     odooKeyByMatId: Map<string, string>,
-    odooList: OdooMat[],
-    latestRef: () => number,
-    myGen: number,
-): Promise<Map<string, number> | null> {
-    const densityByKey = new Map(odooList.map((o) => [o.key, Number(o.density || 0)]));
-    const kgByKey = new Map<string, number>();
-
-    const add = (key: string, kg: number) => {
-        if (!isFinite(kg) || kg <= 0) return;
-        kgByKey.set(key, (kgByKey.get(key) || 0) + kg);
-    };
+): Promise<Map<string, PartData[]> | null> {
+    const partsByMaterialThickness = new Map<string, PartData[]>();
 
     const stack: any[] = [];
     if (doc?.rootNode) stack.push(doc.rootNode);
 
-    let sliceStart = nowMs();
     while (stack.length) {
-        if (myGen !== latestRef()) return null;
+        const node = stack.pop();
 
-        const n = stack.pop();
-        const vol_m3 = nodeMeshVolumeM3(n);
-        if (vol_m3 > 0) {
-            const mats = Array.isArray(n.materialId) ? apportionByFaceCount(n) : new Map<string, number>();
-            if (mats.size === 0) {
-                const id = typeof n.materialId === "string" ? n.materialId : null;
-                const key = id ? odooKeyByMatId.get(id) : undefined;
-                const rho = key ? densityByKey.get(key) || 0 : 0;
-                if (key && rho > 0) add(key, vol_m3 * rho);
-            } else {
-                for (const [matId, w] of mats) {
-                    const key = odooKeyByMatId.get(matId);
-                    if (!key) continue;
-                    const rho = densityByKey.get(key) || 0;
-                    if (rho > 0) add(key, vol_m3 * rho * w);
+        const dimensions = getPartDimensions(node);
+        if (dimensions) {
+            const thicknessInfo = detectThickness(dimensions);
+            if (thicknessInfo) {
+                const materialId = typeof node.materialId === "string" ? node.materialId : null;
+                const materialKey = materialId ? odooKeyByMatId.get(materialId) : null;
+
+                if (materialKey) {
+                    const key = `${materialKey}@${thicknessInfo.thickness.toFixed(2)}`;
+                    if (!partsByMaterialThickness.has(key)) {
+                        partsByMaterialThickness.set(key, []);
+                    }
+
+                    partsByMaterialThickness.get(key)!.push({
+                        thickness: thicknessInfo.thickness,
+                        width: thicknessInfo.width,
+                        height: thicknessInfo.height,
+                        area: thicknessInfo.width * thicknessInfo.height,
+                        materialKey: materialKey,
+                    });
                 }
             }
         }
 
-        let c = n.firstChild;
+        let c = node.firstChild;
         while (c) {
             stack.push(c);
             c = c.nextSibling;
         }
-
-        if (nowMs() - sliceStart > SLICE_MS) {
-            await sleep0();
-            sliceStart = nowMs();
-        }
     }
 
-    return kgByKey;
+    return partsByMaterialThickness;
 }
 
 let loading = new Loading();
@@ -294,6 +278,7 @@ function createQuoteCard() {
     font: 14px Manrope,sans-serif;
     overflow: hidden;
   `;
+    card.style.display = "none";
 
     const header = document.createElement("div");
     header.style.cssText = `
@@ -527,14 +512,17 @@ new AppBuilder()
         const ui = createQuoteCard();
         ui.buyButton.disabled = true;
         let quantity = 1;
+
         function clampQuantity(value: number): number {
           return Math.max(1, Math.min(100, Math.round(value)));
         }
+
         function setQuantity(value: number) {
           quantity = clampQuantity(value);
           ui.qtyInput.value = String(quantity);
           requestQuoteDebounced();
         }
+
         ui.minusButton.onclick = () => setQuantity(quantity - 1);
         ui.plusButton.onclick = () => setQuantity(quantity + 1);
         ui.qtyInput.onchange = () => setQuantity(Number(ui.qtyInput.value));
@@ -549,7 +537,21 @@ new AppBuilder()
         let odooList: OdooMat[] = [];
         const canQuote = () => inDocument && !!currentDoc && odooList.length > 0;
 
-        const colorFromKey = (key: string) => {
+        function hideQuoteCard() {
+          ui.card.style.display = "none";
+          ui.totalValue.textContent = "--";
+          ui.materialsList.innerHTML = "";
+          ui.buyButton.disabled = true;
+        }
+
+        function showQuoteCard() {
+          ui.card.style.display = "block";
+        }
+
+        const hexToColor = (hex: string | undefined, key: string): number => {
+            if (hex) {
+                return parseInt(hex.substring(1), 16);
+            }
             let h = 0; 
             for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
             const r = 0x80 + (h & 0x7F), g = 0x80 + ((h >> 7) & 0x7F), b = 0x80 + ((h >> 14) & 0x7F);
@@ -569,19 +571,23 @@ new AppBuilder()
 
         async function syncMaterialsToDocument(doc: any) {
           let list: OdooMat[] | null = null;
+
+          const lang = I18n.currentLanguage();
+          const cacheKey = materialsCacheKey(lang);
+
           try {
-            const res = await ChiliOdoo.materials();
+            const res = await ChiliOdoo.materials(lang);
             const live: OdooMat[] = res?.materials || [];
             if (live.length) {
               list = live;
-              try { localStorage.setItem(MATERIALS_CACHE_KEY, JSON.stringify(live)); } catch {}
+              try { localStorage.setItem(cacheKey, JSON.stringify(live)); } catch {}
             }
           } catch {
           }
 
           if (!list || !list.length) {
             try {
-              const raw = localStorage.getItem(MATERIALS_CACHE_KEY);
+              const raw = localStorage.getItem(cacheKey);
               const cached = raw ? (JSON.parse(raw) as OdooMat[]) : null;
               if (cached && cached.length) list = cached;
             } catch {
@@ -604,7 +610,8 @@ new AppBuilder()
             const newMats: any[] = [];
             for (let i = 0; i < list.length; i++) {
               const o = list[i];
-              const m = new Material(doc, o.name, colorFromKey(o.key));
+              const color = hexToColor(o.color, o.key);
+              const m = new Material(doc, o.name, color);
               newMats.push(m);
             }
             docMats.push(...newMats);
@@ -686,14 +693,40 @@ new AppBuilder()
             try {
                 rebindMapFromDoc(currentDoc);
                 normalizeUnknownMaterials(currentDoc);
-                const kgByKey = await computeKgByMaterialAsync(currentDoc, odooKeyByMatId, odooList, latestGen, myGen);
-                if (kgByKey === null) return;
-                const materials = Array.from(kgByKey, ([key, q]) => ({ key, quantity: q }));
-                if (materials.length === 0) { return; }
+
+                const partsByGroup = await computePartDataAsync(currentDoc, odooKeyByMatId);
+                if (!partsByGroup || partsByGroup.size === 0) { return; }
                 if (myGen !== latestGen()) return;
-                const res = await ChiliOdoo.quote({ materials, quantity: quantity });
+
+                const groups = Array.from(partsByGroup, ([key, parts]) => {
+                    const [materialKey, thicknessStr] = key.split('@');
+                    const thickness = parseFloat(thicknessStr);
+                    const totalArea = parts.reduce((sum, p) => sum + p.area, 0);
+                    
+                    return {
+                        material_key: materialKey,
+                        thickness: thickness,
+                        total_area: totalArea,
+                        parts: parts.map(p => ({
+                            width: p.width,
+                            height: p.height,
+                            area: p.area,
+                        }))
+                    };
+                });
+
+                const res = await ChiliOdoo.quote({ groups, quantity });
                 lastQuoteId = (res as any)?.quote_id;
                 if (myGen !== latestGen()) return;
+
+                if (res.requires_contact) {
+                    ui.totalValue.textContent = '--';
+                    ui.materialsList.innerHTML = '';
+                    ui.buyButton.disabled = true;
+                    I18n.set(ui.buyButton, "textContent", "checkout.quote");
+                    return;
+                }
+
                 const fmt = (n: number) => formatMoney(n, res.currency);
                 ui.totalValue.textContent = `${fmt(res.total)}`;
                 ui.materialsList.innerHTML = '';
@@ -718,7 +751,7 @@ new AppBuilder()
                     name.style.cssText = `color: #333; font-weight: 500;`;
                     
                     const qty = document.createElement('span');
-                    qty.textContent = `${item.quantity.toFixed(2)} kg`;
+                    // qty.textContent = `${item.quantity.toFixed(2)} kg`;
                     qty.style.cssText = `color: #666; text-align: right; font-size: 12px;`;
                     
                     const price = document.createElement('span');
@@ -732,8 +765,14 @@ new AppBuilder()
                   });
                 }
                 ui.buyButton.disabled = false;
+                I18n.set(ui.buyButton, "textContent", "checkout.addToCart");
             } catch (e:any) {
                 if (myGen !== latestGen()) return;
+                
+                ui.totalValue.textContent = e?.code === 'BAD_INPUT' ? '--' : 'Offline';
+                ui.materialsList.innerHTML = '';
+                ui.buyButton.disabled = true;
+                I18n.set(ui.buyButton, "textContent", "checkout.quote");
             }
         }
 
@@ -745,35 +784,40 @@ new AppBuilder()
           try {
             rebindMapFromDoc(currentDoc);
             normalizeUnknownMaterials(currentDoc);
-            const snapshot = buildVerifySnapshot(currentDoc, odooKeyByMatId);
-            const kgByKey = await computeKgByMaterialAsync(currentDoc, odooKeyByMatId, odooList, () => computeGen, ++computeGen);
-            if (!kgByKey || kgByKey.size === 0) { return; }
 
-            const clientKgByKey: Record<string, number> = {};
-            kgByKey.forEach((kg, key) => {
-              clientKgByKey[key] = kg;
-            });
+            const snapshot = buildVerifySnapshot(currentDoc, odooKeyByMatId);
+            const partsByGroup = await computePartDataAsync(currentDoc, odooKeyByMatId);;
+
+            const groups = partsByGroup ? Array.from(partsByGroup, ([key, parts]) => {
+                const [materialKey, thicknessStr] = key.split('@');
+                return {
+                    material_key: materialKey,
+                    thickness: parseFloat(thicknessStr),
+                    total_area: parts.reduce((sum, p) => sum + p.area, 0),
+                };
+            }) : [];
 
             const [cdFile, stepFile] = await Promise.all([
               exportCdFile(currentDoc),
               exportStepFile(currentDoc).catch(() => null),
             ]);
 
-            const res = await ChiliOdoo.checkout({ snapshot, quantity: quantity, client_kg_by_key: clientKgByKey, files: { cd: cdFile, step: stepFile },});
+            const res = await ChiliOdoo.checkout({ snapshot, quantity: quantity, groups, files: { cd: cdFile, step: stepFile },});
             
             window.onbeforeunload = null as any;
-            (window.top || window).location.href = res.checkout_url || '/shop/checkout';
+            const redirectUrl = res.ok ? (res.checkout_url || '/shop/checkout') : (res.redirect_url || '/contactus-thank-you');
+            (window.top || window).location.href = redirectUrl;
           } catch (e: any) {
             ui.totalValue.textContent = 'Offline';
           } finally {
             if (document.visibilityState !== 'hidden') {
               ui.buyButton.disabled = false;
-              ui.buyButton.textContent = 'Add to cart';
+              I18n.set(ui.buyButton, "textContent", "checkout.addToCart");
             }
           }
         }
 
-        ui.buyButton.onclick = beginCheckout;
+        ui.buyButton.onclick = () => beginCheckout();
 
         const requestQuoteDebounced = debounce(requestQuote, 600);
 
@@ -809,13 +853,14 @@ new AppBuilder()
           if (show) {
             inDocument = false;
             currentDoc = null;
-            ui.totalValue.textContent = '--';
+            hideQuoteCard();
           } else {
             const view = getCurrentApplication()?.activeView;
             inDocument = !!view
             currentDoc = view?.document ?? null;
 
             if (currentDoc) {
+              showQuoteCard();
               (async () => {
                 const docRef = currentDoc;
                 try {
@@ -825,6 +870,8 @@ new AppBuilder()
                   if (docRef === currentDoc ) ui.totalValue.textContent = 'Offline';
                 }
               })();
+            } else {
+              hideQuoteCard();
             }
           }
         });
@@ -834,11 +881,12 @@ new AppBuilder()
 
           if (!view) {
             currentDoc = null;
-            ui.totalValue.textContent = '--';
+            hideQuoteCard();
             return;
           }
 
           currentDoc = view.document;
+          showQuoteCard();
           const docRef = currentDoc;
 
           try {

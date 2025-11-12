@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-10-28)
+// See CHANGELOG.md for modifications (updated 2025-11-12)
 import { Locale } from "./i18n";
 
 export default {
@@ -46,6 +46,7 @@ export default {
         "checkout.addToCart": "Užsakyti",
         "checkout.materials": "Medžiagų sąrašas",
         "checkout.total": "Iš viso",
+        "checkout.quote": "Kurti užklausą",
         "command.act.alignCamera": "Suderinti kamerą",
         "command.boolean.common": "Sukirsti",
         "command.boolean.cut": "Iškirpti",

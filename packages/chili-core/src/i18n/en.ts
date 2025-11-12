@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-10-21)
+/// See CHANGELOG.md for modifications (updated 2025-11-12)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -49,6 +49,7 @@ export default {
         "checkout.addToCart": "Cart",
         "checkout.materials": "Materials list",
         "checkout.total": "Total",
+        "checkout.quote": "Request a quote",
         "command.act.alignCamera": "Align Camera",
         "command.boolean.common": "Intersect",
         "command.boolean.cut": "Cut",

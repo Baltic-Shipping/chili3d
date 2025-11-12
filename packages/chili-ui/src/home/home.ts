@@ -59,7 +59,7 @@ export class Home extends HTMLElement {
     async render() {
         const documents = await this.getDocuments();
         this.append(this.leftSection(), this.rightSection(documents));
-        this.app.mainWindow?.appendChild(this);
+        this.app.mainWindow?.dom.append(this);
     }
 
     private leftSection() {

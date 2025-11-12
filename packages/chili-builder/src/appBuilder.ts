@@ -65,7 +65,7 @@ export class AppBuilder {
 
             let ui = await import("chili-ui");
             const app = document.getElementById("app") as HTMLElement;
-            this._window = new ui.MainWindow(await this.getRibbonTabs(), "iconfont.js", app);
+            this._window = new ui.MainWindow(await this.getRibbonTabs(), app);
         });
         return this;
     }
@@ -87,7 +87,7 @@ export class AppBuilder {
         this.ensureNecessary();
 
         let app = this.createApp();
-        await this._window?.init(app);
+        this._window?.init(app);
 
         this.loadAdditionalCommands();
 

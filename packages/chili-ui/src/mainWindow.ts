@@ -14,59 +14,56 @@ import {
 import { Dialog } from "./dialog";
 import { Editor } from "./editor";
 import { Home } from "./home";
-import "./mainWindow.module.css";
 import { Permanent } from "./permanent";
 import { Toast } from "./toast";
 
-export class MainWindow extends HTMLElement implements IWindow {
+export class MainWindow implements IWindow {
     private _inited: boolean = false;
     private _home?: Home;
     private _editor?: Editor;
 
+    readonly dom: HTMLElement;
+
     constructor(
         readonly tabs: RibbonTab[],
-        readonly iconFont: string,
         dom?: HTMLElement,
     ) {
-        super();
-        this.tabIndex = 0;
-        this.ensureDom(dom);
+        this.dom = this.ensureDom(dom);
     }
 
     protected ensureDom(dom?: HTMLElement) {
-        if (dom) {
-            dom.append(this);
-        } else {
-            document.body.appendChild(this);
+        if (!dom) {
+            dom = document.createElement("div");
+            dom.id = "chili3d-main-window";
+            dom.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                tab-index: 0;
+            `;
+            document.body.appendChild(dom);
         }
 
-        this.oncontextmenu = (e) => {
+        dom.oncontextmenu = (e) => {
             e.preventDefault();
             e.stopPropagation();
         };
-        this.addEventListener("scroll", (e) => {
-            this.scrollTop = 0;
+        dom.addEventListener("scroll", (e) => {
+            dom.scrollTop = 0;
         });
+        return dom;
     }
 
-    async init(app: IApplication): Promise<void> {
+    init(app: IApplication) {
         if (this._inited) {
             throw new Error("MainWindow is already inited");
         }
         this._inited = true;
-
-        await this.fetchIconFont();
-
         this._initHome(app);
         this._initEditor(app);
         this._initSubs(app);
-    }
-
-    async fetchIconFont() {
-        const response = await fetch(this.iconFont);
-        const text = await response.text();
-
-        new Function(text)();
     }
 
     private _initSubs(app: IApplication) {
@@ -110,5 +107,3 @@ export class MainWindow extends HTMLElement implements IWindow {
         document.documentElement.setAttribute("theme", theme);
     }
 }
-
-customElements.define("chili3d-main-window", MainWindow);

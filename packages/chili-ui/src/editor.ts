@@ -85,6 +85,7 @@ export class Editor extends HTMLElement {
         );
         this.clearSelectionControl();
         this.render();
+        app.mainWindow?.dom.appendChild(this);
     }
 
     private render() {
@@ -227,7 +228,6 @@ export class Editor extends HTMLElement {
                 new Statusbar(style.statusbar),
             ),
         );
-        this.app.mainWindow?.appendChild(this);
     }
 
     private async startCutoutFlow() {
@@ -929,7 +929,7 @@ export class Editor extends HTMLElement {
     private _startSidebarResize(e: MouseEvent) {
         e.preventDefault();
         this._isResizingSidebar = true;
-        if (this.app.mainWindow) this.app.mainWindow.style.cursor = "ew-resize";
+        if (this.app.mainWindow?.dom) this.app.mainWindow.dom.style.cursor = "ew-resize";
         const onMouseMove = (ev: MouseEvent) => {
             if (!this._isResizingSidebar || !this._sidebarEl || !this._templateSidebarEl) return;
             const sidebarRect = this._sidebarEl.getBoundingClientRect();
@@ -943,12 +943,12 @@ export class Editor extends HTMLElement {
         };
         const onMouseUp = () => {
             this._isResizingSidebar = false;
-            if (this.app.mainWindow) this.app.mainWindow.style.cursor = "";
-            this.app.mainWindow?.removeEventListener("mousemove", onMouseMove);
-            this.app.mainWindow?.removeEventListener("mouseup", onMouseUp);
+            if (this.app.mainWindow?.dom) this.app.mainWindow.dom.style.cursor = "";
+            this.app.mainWindow?.dom.removeEventListener("mousemove", onMouseMove);
+            this.app.mainWindow?.dom.removeEventListener("mouseup", onMouseUp);
         };
-        this.app.mainWindow?.addEventListener("mousemove", onMouseMove);
-        this.app.mainWindow?.addEventListener("mouseup", onMouseUp);
+        this.app.mainWindow?.dom.addEventListener("mousemove", onMouseMove);
+        this.app.mainWindow?.dom.addEventListener("mouseup", onMouseUp);
     }
 
     connectedCallback(): void {

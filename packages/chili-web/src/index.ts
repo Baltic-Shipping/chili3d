@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-11-12)
+// See CHANGELOG.md for modifications (updated 2025-11-13)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -722,7 +722,7 @@ new AppBuilder()
                 if (res.requires_contact) {
                     ui.totalValue.textContent = '--';
                     ui.materialsList.innerHTML = '';
-                    ui.buyButton.disabled = true;
+                    ui.buyButton.disabled = false;
                     I18n.set(ui.buyButton, "textContent", "checkout.quote");
                     return;
                 }
@@ -765,7 +765,6 @@ new AppBuilder()
                   });
                 }
                 ui.buyButton.disabled = false;
-                I18n.set(ui.buyButton, "textContent", "checkout.addToCart");
             } catch (e:any) {
                 if (myGen !== latestGen()) return;
                 

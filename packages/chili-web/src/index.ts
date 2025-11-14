@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-11-13)
+// See CHANGELOG.md for modifications (updated 2025-11-14)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -695,10 +695,11 @@ new AppBuilder()
                 normalizeUnknownMaterials(currentDoc);
 
                 const partsByGroup = await computePartDataAsync(currentDoc, odooKeyByMatId);
-                if (!partsByGroup || partsByGroup.size === 0) { return; }
+                // if (!partsByGroup || partsByGroup.size === 0) { return; }
                 if (myGen !== latestGen()) return;
 
-                const groups = Array.from(partsByGroup, ([key, parts]) => {
+                const groups = partsByGroup && partsByGroup.size > 0 
+                ? Array.from(partsByGroup, ([key, parts]) => {
                     const [materialKey, thicknessStr] = key.split('@');
                     const thickness = parseFloat(thicknessStr);
                     const totalArea = parts.reduce((sum, p) => sum + p.area, 0);
@@ -707,13 +708,9 @@ new AppBuilder()
                         material_key: materialKey,
                         thickness: thickness,
                         total_area: totalArea,
-                        parts: parts.map(p => ({
-                            width: p.width,
-                            height: p.height,
-                            area: p.area,
-                        }))
                     };
-                });
+                })
+                : [];
 
                 const res = await ChiliOdoo.quote({ groups, quantity });
                 lastQuoteId = (res as any)?.quote_id;
@@ -787,14 +784,19 @@ new AppBuilder()
             const snapshot = buildVerifySnapshot(currentDoc, odooKeyByMatId);
             const partsByGroup = await computePartDataAsync(currentDoc, odooKeyByMatId);;
 
-            const groups = partsByGroup ? Array.from(partsByGroup, ([key, parts]) => {
+            const groups = partsByGroup && partsByGroup.size > 0 
+            ? Array.from(partsByGroup, ([key, parts]) => {
                 const [materialKey, thicknessStr] = key.split('@');
+                const thickness = parseFloat(thicknessStr);
+                const totalArea = parts.reduce((sum, p) => sum + p.area, 0);
+                
                 return {
                     material_key: materialKey,
-                    thickness: parseFloat(thicknessStr),
-                    total_area: parts.reduce((sum, p) => sum + p.area, 0),
+                    thickness: thickness,
+                    total_area: totalArea,
                 };
-            }) : [];
+            })
+            : [];  
 
             const [cdFile, stepFile] = await Promise.all([
               exportCdFile(currentDoc),
@@ -804,8 +806,7 @@ new AppBuilder()
             const res = await ChiliOdoo.checkout({ snapshot, quantity: quantity, groups, files: { cd: cdFile, step: stepFile },});
             
             window.onbeforeunload = null as any;
-            const redirectUrl = res.ok ? (res.checkout_url || '/shop/checkout') : (res.redirect_url || '/contactus-thank-you');
-            (window.top || window).location.href = redirectUrl;
+            (window.top || window).location.href = res.redirect_url;
           } catch (e: any) {
             ui.totalValue.textContent = 'Offline';
           } finally {

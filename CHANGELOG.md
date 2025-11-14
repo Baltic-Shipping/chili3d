@@ -38,3 +38,4 @@
 **2025-10-21** - remove toggle, update translations, remove draw free form section, add autosave
 **2025-11-12** - various changes
 **2025-11-13** - fixes
+**2025-11-14** - more fixes

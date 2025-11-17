@@ -39,3 +39,4 @@
 **2025-11-12** - various changes
 **2025-11-13** - fixes
 **2025-11-14** - more fixes
+**2025-11-17** - autosave on new doc and when using checkout

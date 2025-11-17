@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-10-21)
+// See CHANGELOG.md for modifications (updated 2025-11-17)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -164,6 +164,8 @@ export class Application implements IApplication {
         const deepGray = new Material(document, "DeepGray", 0x898989);
         document.materials.push(lightGray, deepGray);
         await this.createActiveView(document);
+        this.activeView?.cameraController.fitContent();
+        await document.save();
         return document;
     }
 

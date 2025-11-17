@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-11-14)
+// See CHANGELOG.md for modifications (updated 2025-11-1)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -778,6 +778,14 @@ new AppBuilder()
           ui.buyButton.textContent = '...';
 
           try {
+            if (currentDoc && typeof currentDoc.save === "function") {
+              try {
+                await currentDoc.save();
+              } catch (err) {
+                Logger.warn("Autosave before checkout failed", err);
+              }
+            }
+            
             rebindMapFromDoc(currentDoc);
             normalizeUnknownMaterials(currentDoc);
 

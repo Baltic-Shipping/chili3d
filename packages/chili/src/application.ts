@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-11-17)
+// See CHANGELOG.md for modifications (updated 2025-10-21)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -106,14 +106,11 @@ export class Application implements IApplication {
     }
 
     private readonly handleWindowUnload = (event: BeforeUnloadEvent) => {
-        if (!this.activeView) return;
-        const doc = this.activeView.document as IDocument | undefined;
-
-        if (doc && typeof (doc as any).save === "function") {
-            try {
-                void (doc as any).save();
-            } catch {
-            }
+        if (this.activeView) {
+            // Cancel the event as stated by the standard.
+            event.preventDefault();
+            // Chrome requires returnValue to be set.
+            event.returnValue = "";
         }
     };
 

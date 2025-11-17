@@ -1,3 +1,4 @@
+/* See CHANGELOG.md for modifications (updated 2025-11-17) */
 .root {
     position: absolute;
     top: 0;
@@ -41,6 +42,19 @@
                 font-size: 12px;
                 user-select: none;
                 cursor: default;
+            }
+        }
+
+        .icon:first-child {
+            background-color: #e00c30;
+            color: #ffffff;
+
+            svg {
+                fill: currentColor;
+            }
+
+            &:hover {
+                filter: brightness(1.1);
             }
         }
     }

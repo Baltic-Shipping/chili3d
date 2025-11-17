@@ -35,6 +35,23 @@ dialog::backdrop {
     overflow: auto;
 }
 
+.content form > div {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.content form > div > label {
+    flex: 1 1 auto;
+}
+
+.content form > div > input,
+.content form > div > select {
+    flex: 0 0 140px;
+    box-sizing: border-box;
+}
+
 .buttons {
     display: flex;
     flex-direction: row;

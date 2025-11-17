@@ -39,4 +39,4 @@
 **2025-11-12** - various changes
 **2025-11-13** - fixes
 **2025-11-14** - more fixes
-**2025-11-17** - autosave on home menu and when using checkout, set color for the primary button
+**2025-11-17** - autosave on home menu and when using checkout, set color for the primary button, make every property row have a fixed width.

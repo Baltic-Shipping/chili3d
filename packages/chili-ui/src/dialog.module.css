@@ -1,3 +1,4 @@
+/* See CHANGELOG.md for modifications (updated 2025-11-17) */
 dialog {
     border: none;
     box-shadow: 0px 5px 10px var(--foreground-muted-color);
@@ -59,5 +60,10 @@ dialog::backdrop {
             background-color: var(--primary-color);
             color: var(--title-checked);
         }
+    }
+
+    & button:first-child {
+        background-color: var(--primary-color);
+        color: var(--title-checked);
     }
 }

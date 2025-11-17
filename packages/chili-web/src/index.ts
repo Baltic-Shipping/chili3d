@@ -862,6 +862,19 @@ new AppBuilder()
 
         PubSub.default.sub("displayHome", (show: boolean) => {
           if (show) {
+            const app = getCurrentApplication();
+            const view = app?.activeView;
+            const doc = (currentDoc as any) || view?.document;
+
+            if (doc && typeof doc.save === "function") {
+              (async () => {
+                try {
+                  await doc.save();
+                } catch (err) {
+                  Logger.warn("Autosave when going to home failed", err);
+                }
+              })();
+            }
             inDocument = false;
             currentDoc = null;
             hideQuoteCard();

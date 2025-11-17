@@ -106,11 +106,14 @@ export class Application implements IApplication {
     }
 
     private readonly handleWindowUnload = (event: BeforeUnloadEvent) => {
-        if (this.activeView) {
-            // Cancel the event as stated by the standard.
-            event.preventDefault();
-            // Chrome requires returnValue to be set.
-            event.returnValue = "";
+        if (!this.activeView) return;
+        const doc = this.activeView.document as IDocument | undefined;
+
+        if (doc && typeof (doc as any).save === "function") {
+            try {
+                void (doc as any).save();
+            } catch {
+            }
         }
     };
 
@@ -164,8 +167,6 @@ export class Application implements IApplication {
         const deepGray = new Material(document, "DeepGray", 0x898989);
         document.materials.push(lightGray, deepGray);
         await this.createActiveView(document);
-        this.activeView?.cameraController.fitContent();
-        await document.save();
         return document;
     }
 

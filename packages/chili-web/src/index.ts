@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-11-1)
+// See CHANGELOG.md for modifications (updated 2025-11-17)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -537,6 +537,16 @@ new AppBuilder()
         let odooList: OdooMat[] = [];
         const canQuote = () => inDocument && !!currentDoc && odooList.length > 0;
 
+        async function autosaveCurrentDocument(reason: string) {
+            if (!currentDoc || typeof (currentDoc as any).save !== "function") return;
+
+            try {
+                await (currentDoc as any).save();
+            } catch (err) {
+                Logger.warn(`Autosave before ${reason} failed`, err);
+            }
+        }
+
         function hideQuoteCard() {
           ui.card.style.display = "none";
           ui.totalValue.textContent = "--";
@@ -778,14 +788,7 @@ new AppBuilder()
           ui.buyButton.textContent = '...';
 
           try {
-            if (currentDoc && typeof currentDoc.save === "function") {
-              try {
-                await currentDoc.save();
-              } catch (err) {
-                Logger.warn("Autosave before checkout failed", err);
-              }
-            }
-            
+            await autosaveCurrentDocument("checkout");
             rebindMapFromDoc(currentDoc);
             normalizeUnknownMaterials(currentDoc);
 

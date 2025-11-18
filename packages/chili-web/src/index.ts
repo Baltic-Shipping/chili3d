@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-11-17)
+// See CHANGELOG.md for modifications (updated 2025-11-18)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -218,8 +218,9 @@ function detectThickness(
 async function computePartDataAsync(
     doc: any,
     odooKeyByMatId: Map<string, string>,
-): Promise<Map<string, PartData[]> | null> {
+): Promise<{ parts: Map<string, PartData[]>; rejectedCount: number }> {
     const partsByMaterialThickness = new Map<string, PartData[]>();
+    let rejectedCount = 0;
 
     const stack: any[] = [];
     if (doc?.rootNode) stack.push(doc.rootNode);
@@ -248,6 +249,8 @@ async function computePartDataAsync(
                         materialKey: materialKey,
                     });
                 }
+            } else {
+                rejectedCount++;
             }
         }
 
@@ -258,7 +261,7 @@ async function computePartDataAsync(
         }
     }
 
-    return partsByMaterialThickness;
+    return { parts: partsByMaterialThickness, rejectedCount };
 }
 
 let loading = new Loading();
@@ -704,7 +707,8 @@ new AppBuilder()
                 rebindMapFromDoc(currentDoc);
                 normalizeUnknownMaterials(currentDoc);
 
-                const partsByGroup = await computePartDataAsync(currentDoc, odooKeyByMatId);
+                const result = await computePartDataAsync(currentDoc, odooKeyByMatId);
+                const { parts: partsByGroup, rejectedCount } = result;
                 // if (!partsByGroup || partsByGroup.size === 0) { return; }
                 if (myGen !== latestGen()) return;
 
@@ -726,9 +730,23 @@ new AppBuilder()
                 lastQuoteId = (res as any)?.quote_id;
                 if (myGen !== latestGen()) return;
 
-                if (res.requires_contact) {
+                if (res.requires_contact || rejectedCount > 0) {
+                  let message = "We couldn't calculate a quote.";
+                    if (rejectedCount > 0) {
+                        message = `${rejectedCount} part(s) cannot be laser cut.`;
+                    }
                     ui.totalValue.textContent = '--';
                     ui.materialsList.innerHTML = '';
+                    const warning = document.createElement('div');
+                    warning.style.cssText = `
+                        padding: 8px 12px;
+                        font-size: 12px;
+                        color: #d32f2f;
+                        background: #ffebee;
+                        border-radius: 4px;
+                    `;
+                    warning.textContent = message;
+                    ui.materialsList.appendChild(warning);
                     ui.buyButton.disabled = false;
                     I18n.set(ui.buyButton, "textContent", "checkout.quote");
                     return;
@@ -793,7 +811,8 @@ new AppBuilder()
             normalizeUnknownMaterials(currentDoc);
 
             const snapshot = buildVerifySnapshot(currentDoc, odooKeyByMatId);
-            const partsByGroup = await computePartDataAsync(currentDoc, odooKeyByMatId);;
+            const result = await computePartDataAsync(currentDoc, odooKeyByMatId);
+            const { parts: partsByGroup, rejectedCount } = result;
 
             const groups = partsByGroup && partsByGroup.size > 0 
             ? Array.from(partsByGroup, ([key, parts]) => {

@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-11-18)
+// See CHANGELOG.md for modifications (updated 2025-11-19)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -170,6 +170,28 @@ function formatMoney(amount: number, currency: string, locale?: string) {
 type OdooMat = { key: string; name: string; color?: string; density?: number; basis?: string; uom?: string };
 
 function getPartDimensions(node: any): [number, number, number] | null {
+    if (!node) return null;
+
+    if (typeof node.boundingBox === "function") {
+        const bb = node.boundingBox();
+        if (bb) {
+            const sizeX = (bb.max.x ?? 0) - (bb.min.x ?? 0);
+            const sizeY = (bb.max.y ?? 0) - (bb.min.y ?? 0);
+            const sizeZ = (bb.max.z ?? 0) - (bb.min.z ?? 0);
+
+            if (
+                Number.isFinite(sizeX) &&
+                Number.isFinite(sizeY) &&
+                Number.isFinite(sizeZ) &&
+                sizeX > 0 &&
+                sizeY > 0 &&
+                sizeZ > 0
+            ) {
+                return [sizeX, sizeY, sizeZ];
+            }
+        }
+    }
+
     const faces = node?.mesh?.faces;
     if (!faces || !faces.position?.length) return null;
 
@@ -187,19 +209,23 @@ function getPartDimensions(node: any): [number, number, number] | null {
         const y = pos[i + 1];
         const z = pos[i + 2];
 
-        minX = Math.min(minX, x);
-        maxX = Math.max(maxX, x);
-        minY = Math.min(minY, y);
-        maxY = Math.max(maxY, y);
-        minZ = Math.min(minZ, z);
-        maxZ = Math.max(maxZ, z);
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+        if (z < minZ) minZ = z;
+        if (z > maxZ) maxZ = z;
     }
 
     const sizeX = maxX - minX;
     const sizeY = maxY - minY;
     const sizeZ = maxZ - minZ;
 
-    return [sizeX, sizeY, sizeZ];
+    if (!Number.isFinite(sizeX) || !Number.isFinite(sizeY) || !Number.isFinite(sizeZ)) {
+        return null;
+    }
+
+    return [Math.abs(sizeX), Math.abs(sizeY), Math.abs(sizeZ)];
 }
 
 function detectThickness(
@@ -704,6 +730,7 @@ new AppBuilder()
             if (!canQuote()) { return; }
             const myGen = ++computeGen;
             try {
+                I18n.set(ui.buyButton, "textContent", "checkout.addToCart");
                 rebindMapFromDoc(currentDoc);
                 normalizeUnknownMaterials(currentDoc);
 
@@ -731,25 +758,24 @@ new AppBuilder()
                 if (myGen !== latestGen()) return;
 
                 if (res.requires_contact || rejectedCount > 0) {
-                  let message = "We couldn't calculate a quote.";
-                    if (rejectedCount > 0) {
-                        message = `${rejectedCount} part(s) cannot be laser cut.`;
-                    }
-                    ui.totalValue.textContent = '--';
-                    ui.materialsList.innerHTML = '';
-                    const warning = document.createElement('div');
-                    warning.style.cssText = `
-                        padding: 8px 12px;
-                        font-size: 12px;
-                        color: #d32f2f;
-                        background: #ffebee;
-                        border-radius: 4px;
-                    `;
-                    warning.textContent = message;
-                    ui.materialsList.appendChild(warning);
-                    ui.buyButton.disabled = false;
-                    I18n.set(ui.buyButton, "textContent", "checkout.quote");
-                    return;
+                  const warning = document.createElement('div');
+                  warning.style.cssText = `
+                      padding: 8px 12px;
+                      font-size: 12px;
+                      color: #d32f2f;
+                      background: #ffebee;
+                      border-radius: 4px;
+                  `;
+                  I18n.set(warning, "textContent", "warning.quote");
+                  if (rejectedCount > 0) {
+                      I18n.set(warning, "textContent", "warning.nonLaser");
+                  }
+                  ui.totalValue.textContent = '--';
+                  ui.materialsList.innerHTML = '';
+                  ui.materialsList.appendChild(warning);
+                  ui.buyButton.disabled = false;
+                  I18n.set(ui.buyButton, "textContent", "checkout.quote");
+                  return;
                 }
 
                 const fmt = (n: number) => formatMoney(n, res.currency);

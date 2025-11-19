@@ -1,4 +1,4 @@
-/// See CHANGELOG.md for modifications (updated 2025-11-12)
+// See CHANGELOG.md for modifications (updated 2025-11-19)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -331,6 +331,8 @@ export default {
         "viewport.fitContent": "Fit Content",
         "viewport.zoomIn": "Zoom In",
         "viewport.zoomOut": "Zoom Out",
+        "warning.quote": "We couldn't calculate a quote.",
+        "warning.nonLaser": "One or more parts cannot be laser cut.",
         "position.world.x": "World X",
         "position.world.y": "World Y",
         "position.world.z": "World Z",

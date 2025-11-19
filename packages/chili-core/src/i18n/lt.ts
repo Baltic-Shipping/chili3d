@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-11-12)
+// See CHANGELOG.md for modifications (updated 2025-11-19)
 import { Locale } from "./i18n";
 
 export default {
@@ -328,6 +328,8 @@ export default {
         "viewport.fitContent": "Sutalpinti tūrinį į vaizdą",
         "viewport.zoomIn": "Priartinti",
         "viewport.zoomOut": "Nutolinti",
+        "warning.quote": "Nepavyko apskaičiuoti kainos.",
+        "warning.nonLaser": "Viena ar kelios dalys negali būti pjaustomos lazeriu.",
         "position.world.x": "Pasaulio X",
         "position.world.y": "Pasaulio Y",
         "position.world.z": "Pasaulio Z",

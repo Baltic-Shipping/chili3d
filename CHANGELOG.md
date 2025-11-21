@@ -42,3 +42,4 @@
 **2025-11-17** - autosave on home menu and when using checkout, set color for the primary button, make every property row have a fixed width.
 **2025-11-18** - add rejected parts count
 **2025-11-19** - update translations, fix imported shape thickness not detected
+**2025-11-21** - calculate total cut length and total cut count for all laser cuttable shapes

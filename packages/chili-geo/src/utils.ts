@@ -1,7 +1,22 @@
+// See CHANGELOG.md for modifications (updated 2025-11-21)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
 import { ICurve, IEdge, IFace, IWire, Orientation, Precision, Result, ShapeType, XYZ } from "chili-core";
+
+export interface LaserLoopInfo {
+    wire: IWire;
+    length: number;
+    isOuter: boolean;
+}
+
+export interface LaserCutStats {
+    outerLength: number;
+    holeLength: number;
+    totalLength: number;
+    cuts: number;
+    loops: LaserLoopInfo[];
+}
 
 export class GeoUtils {
     static nearestPoint(wire: IWire, point: XYZ): { edge: IEdge; point: XYZ } {
@@ -99,5 +114,46 @@ export class GeoUtils {
             }
         });
         return result;
+    }
+
+    static wireLength(wire: IWire): number {
+        const edges = wire.edgeLoop();
+        let length = 0;
+        for (const edge of edges) {
+            length += edge.length();
+        }
+        return length;
+    }
+
+    static laserCutStatsFromFace(face: IFace): LaserCutStats {
+        const allWires = face.findSubShapes(ShapeType.Wire) as IWire[];
+        const outerWire = face.outerWire();
+        const closedWires = allWires.filter((w) => w.isClosed());
+        const hasOuter = closedWires.some((w) => w.isEqual(outerWire));
+        if (!hasOuter && outerWire.isClosed()) {
+            closedWires.unshift(outerWire);
+        }
+
+        const loops: LaserLoopInfo[] = [];
+        let outerLength = 0;
+        let holeLength = 0;
+
+        for (const wire of closedWires) {
+            const length = this.wireLength(wire);
+            const isOuter = wire.isEqual(outerWire);
+
+            if (isOuter) {
+                outerLength += length;
+            } else {
+                holeLength += length;
+            }
+
+            loops.push({ wire, length, isOuter });
+        }
+
+        const totalLength = outerLength + holeLength;
+        const cuts = loops.length;
+
+        return { outerLength, holeLength, totalLength, cuts, loops };
     }
 }

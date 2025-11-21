@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-11-19)
+// See CHANGELOG.md for modifications (updated 2025-11-21)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -6,13 +6,18 @@ import { AppBuilder } from "chili-builder";
 import {
     History,
     I18n,
+    IFace,
+    IShape,
     Logger,
     Material,
     PubSub,
+    ShapeNode,
+    ShapeType,
     Transaction,
     VisualNode,
     getCurrentApplication,
 } from "chili-core";
+import { GeoUtils } from "chili-geo";
 import { Loading } from "./loading";
 import { ChiliOdoo } from "./odooApi";
 
@@ -42,6 +47,8 @@ type PartData = {
     height: number;
     area: number;
     materialKey: string;
+    laserCutLength: number;
+    laserCutCount: number;
 };
 
 function getAllVisualNodes(doc: any): VisualNode[] {
@@ -241,6 +248,45 @@ function detectThickness(
     return null;
 }
 
+function computeLaserStatsForNode(node: any): { laserCutLength: number; laserCutCount: number } {
+    try {
+        if (!(node instanceof ShapeNode)) {
+            return { laserCutLength: 0, laserCutCount: 0 };
+        }
+
+        const shapeRes = node.shape;
+        if (!shapeRes || !shapeRes.isOk) {
+            return { laserCutLength: 0, laserCutCount: 0 };
+        }
+
+        const shape: IShape = shapeRes.value;
+        const faces = shape.findSubShapes(ShapeType.Face) as IFace[];
+        if (!faces.length) {
+            return { laserCutLength: 0, laserCutCount: 0 };
+        }
+
+        let mainFace = faces[0];
+        let maxArea = mainFace.area();
+        for (let i = 1; i < faces.length; i++) {
+            const f = faces[i];
+            const area = f.area();
+            if (area > maxArea) {
+                maxArea = area;
+                mainFace = f;
+            }
+        }
+
+        const stats = GeoUtils.laserCutStatsFromFace(mainFace);
+        return {
+            laserCutLength: stats.totalLength,
+            laserCutCount: stats.cuts,
+        };
+    } catch (e) {
+        Logger.warn("computeLaserStatsForNode failed", e);
+        return { laserCutLength: 0, laserCutCount: 0 };
+    }
+}
+
 async function computePartDataAsync(
     doc: any,
     odooKeyByMatId: Map<string, string>,
@@ -267,12 +313,16 @@ async function computePartDataAsync(
                         partsByMaterialThickness.set(key, []);
                     }
 
+                    const { laserCutLength, laserCutCount } = computeLaserStatsForNode(node);
+
                     partsByMaterialThickness.get(key)!.push({
                         thickness: thicknessInfo.thickness,
                         width: thicknessInfo.width,
                         height: thicknessInfo.height,
                         area: thicknessInfo.width * thicknessInfo.height,
-                        materialKey: materialKey,
+                        materialKey,
+                        laserCutLength,
+                        laserCutCount,
                     });
                 }
             } else {
@@ -739,16 +789,20 @@ new AppBuilder()
                 // if (!partsByGroup || partsByGroup.size === 0) { return; }
                 if (myGen !== latestGen()) return;
 
-                const groups = partsByGroup && partsByGroup.size > 0 
+                const groups = partsByGroup && partsByGroup.size > 0
                 ? Array.from(partsByGroup, ([key, parts]) => {
-                    const [materialKey, thicknessStr] = key.split('@');
+                    const [materialKey, thicknessStr] = key.split("@");
                     const thickness = parseFloat(thicknessStr);
                     const totalArea = parts.reduce((sum, p) => sum + p.area, 0);
-                    
+                    const totalCutLength = parts.reduce((sum, p) => sum + (p.laserCutLength ?? 0), 0);
+                    const totalCuts = parts.reduce((sum, p) => sum + (p.laserCutCount ?? 0), 0);
+
                     return {
                         material_key: materialKey,
-                        thickness: thickness,
+                        thickness,
                         total_area: totalArea,
+                        total_cut_length_mm: totalCutLength,
+                        total_cuts: totalCuts,
                     };
                 })
                 : [];
@@ -840,19 +894,23 @@ new AppBuilder()
             const result = await computePartDataAsync(currentDoc, odooKeyByMatId);
             const { parts: partsByGroup, rejectedCount } = result;
 
-            const groups = partsByGroup && partsByGroup.size > 0 
+            const groups = partsByGroup && partsByGroup.size > 0
             ? Array.from(partsByGroup, ([key, parts]) => {
-                const [materialKey, thicknessStr] = key.split('@');
+                const [materialKey, thicknessStr] = key.split("@");
                 const thickness = parseFloat(thicknessStr);
                 const totalArea = parts.reduce((sum, p) => sum + p.area, 0);
-                
+                const totalCutLength = parts.reduce((sum, p) => sum + (p.laserCutLength ?? 0), 0);
+                const totalCuts = parts.reduce((sum, p) => sum + (p.laserCutCount ?? 0), 0);
+
                 return {
                     material_key: materialKey,
-                    thickness: thickness,
+                    thickness,
                     total_area: totalArea,
+                    total_cut_length_mm: totalCutLength,
+                    total_cuts: totalCuts,
                 };
             })
-            : [];  
+            : [];
 
             const [cdFile, stepFile] = await Promise.all([
               exportCdFile(currentDoc),

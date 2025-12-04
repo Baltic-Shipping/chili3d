@@ -1,4 +1,4 @@
-/* See CHANGELOG.md for modifications (updated 2025-10-21) */
+/* See CHANGELOG.md for modifications (updated 2025-12-04) */
 .root {
     display: flex;
     flex-direction: column;
@@ -245,11 +245,43 @@
 .commandContextPanel {
     display: flex;
     flex-direction: row;
+    align-items: center;
     justify-content: stretch;
+    gap: 12px;
+    padding: 0px 8px;
     flex: 1 1 auto;
     height: 32px;
     background-color: var(--panel-background-color);
     border-bottom: 1px solid var(--border-color);
+}
+
+.orbitPanel {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 8px;
+}
+
+.commandContextSlot {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    overflow: hidden;
+}
+
+.contextLabel {
+    font-size: 12px;
+    color: var(--foreground-color);
+    white-space: nowrap;
+}
+
+.contextSelect {
+    padding: 2px 12px;
+    font-size: 1em;
+    border-radius: 6px;
+    color: var(--foreground-color);
+    border: 1px solid var(--border-color);
+    background-color: var(--control-background-color);
 }
 
 .ribbonGroup {

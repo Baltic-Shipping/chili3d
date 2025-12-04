@@ -1,13 +1,14 @@
-// See CHANGELOG.md for modifications (updated 2025-10-21)
+// See CHANGELOG.md for modifications (updated 2025-12-04)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { a, collection, div, img, label, span, svg } from "chili-controls";
+import { a, collection, div, img, label, option, select, span, svg } from "chili-controls";
 import {
     Binding,
     ButtonSize,
     Command,
     CommandKeys,
+    Config,
     I18n,
     IApplication,
     ICommand,
@@ -108,14 +109,62 @@ class DisplayConverter implements IConverter<RibbonTabData> {
 }
 
 export class Ribbon extends HTMLElement {
-    private readonly _commandContext = div({ className: style.commandContextPanel });
+    private readonly _commandContextSlot = div({ className: style.commandContextSlot });
+    private readonly _orbitModeSelect: HTMLSelectElement;
+    private readonly _commandContext: HTMLDivElement;
     private commandContext?: CommandContext;
 
     constructor(readonly dataContent: RibbonDataContent) {
         super();
         this.className = style.root;
+
+        this._orbitModeSelect = this.createOrbitModeSelect();
+
+        this._commandContext = div(
+            { className: style.commandContextPanel },
+            this._commandContextSlot,
+            div(
+                { className: style.orbitPanel },
+                label({ className: style.contextLabel, textContent: "Orbit:" }),
+                this._orbitModeSelect,
+            ),
+        );
+
         this.append(this.header(), this.ribbonTabs(), this._commandContext);
     }
+
+    private createOrbitModeSelect(): HTMLSelectElement {
+        const el = select(
+            {
+                className: style.contextSelect,
+                onchange: (e) => {
+                    const mode = (e.target as HTMLSelectElement).value as "turntable" | "trackball";
+                    this.applyOrbitMode(mode);
+                },
+            },
+            option({ value: "turntable", textContent: "Turntable" }),
+            option({ value: "trackball", textContent: "Trackball" }),
+        ) as HTMLSelectElement;
+
+        el.value = Config.instance.orbitRotationMode;
+        return el;
+    }
+
+    private applyOrbitMode(mode: "turntable" | "trackball") {
+        Config.instance.orbitRotationMode = mode;
+
+        for (const v of this.dataContent.app.views) {
+            const cc = (v as any)?.cameraController;
+            if (cc && "rotationMode" in cc) {
+                cc.rotationMode = mode;
+            }
+        }
+    }
+
+    private readonly onConfigChanged = (prop: keyof Config, _src: Config, _old: any) => {
+        if (prop !== "orbitRotationMode") return;
+        this._orbitModeSelect.value = Config.instance.orbitRotationMode;
+    };
 
     private header() {
         return div({ className: style.titleBar }, this.leftPanel(), this.centerPanel(), this.rightPanel());
@@ -267,11 +316,13 @@ export class Ribbon extends HTMLElement {
     connectedCallback(): void {
         PubSub.default.sub("openCommandContext", this.openContext);
         PubSub.default.sub("closeCommandContext", this.closeContext);
+        Config.instance.onPropertyChanged(this.onConfigChanged);
     }
 
     disconnectedCallback(): void {
         PubSub.default.remove("openCommandContext", this.openContext);
         PubSub.default.remove("closeCommandContext", this.closeContext);
+        Config.instance.removePropertyChanged(this.onConfigChanged);
     }
 
     private readonly openContext = (command: ICommand) => {
@@ -279,14 +330,14 @@ export class Ribbon extends HTMLElement {
             this.closeContext();
         }
         this.commandContext = new CommandContext(command);
-        this._commandContext.append(this.commandContext);
+        this._commandContextSlot.append(this.commandContext);
     };
 
     private readonly closeContext = () => {
         this.commandContext?.remove();
         this.commandContext?.dispose();
         this.commandContext = undefined;
-        this._commandContext.innerHTML = "";
+        this._commandContextSlot.innerHTML = "";
     };
 }
 

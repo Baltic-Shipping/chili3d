@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-11-21)
+// See CHANGELOG.md for modifications (updated 2025-12-04)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -344,13 +344,32 @@ let loading = new Loading();
 document.body.appendChild(loading);
 
 function createQuoteCard() {
+    const MINIMIZED_KEY = "chili:quoteCard:minimized";
+    const mobileMQ = window.matchMedia("(max-width: 640px)");
+    const coarseMQ = window.matchMedia("(hover: none) and (pointer: coarse)");
+    const isPhone = () => mobileMQ.matches || coarseMQ.matches;
+
+    let isActive = false;
+    let hasMinimizedPref = false;
+    let minimized = false;
+    try {
+        const raw = localStorage.getItem(MINIMIZED_KEY);
+        if (raw != null) {
+            minimized = raw === "1";
+            hasMinimizedPref = true;
+        }
+    } catch {}
+    if (!hasMinimizedPref && isPhone()) minimized = true;
+
     const card = document.createElement("div");
     card.id = "quote-card";
     card.style.cssText = `
     position: fixed;
-    right: 12px;
-    bottom: 12px;
+    right: calc(12px + env(safe-area-inset-right, 0px));
+    bottom: calc(var(--qc-bottom, 12px) + env(safe-area-inset-bottom, 0px));
     width: 260px;
+    max-width: calc(100vw - 24px);
+    z-index: 1000;
     border-radius: 12px;
     background: #fff;
     box-shadow: 0 8px 24px rgba(0,0,0,.25);
@@ -359,6 +378,39 @@ function createQuoteCard() {
   `;
     card.style.display = "none";
 
+    const fabButton = document.createElement("button");
+    fabButton.id = "qc-fab";
+    fabButton.type = "button";
+    fabButton.setAttribute("aria-label", "Open checkout");
+    fabButton.style.cssText = `
+    position: fixed;
+    right: calc(12px + env(safe-area-inset-right, 0px));
+    bottom: calc(var(--qc-bottom, 12px) + env(safe-area-inset-bottom, 0px));
+    width: 48px;
+    height: 48px;
+    border-radius: 24px;
+    border: none;
+    background: #E00C30;
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(0,0,0,.25);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    z-index: 1000;
+    -webkit-tap-highlight-color: transparent;
+  `;
+
+    fabButton.innerHTML = `
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false" 
+      fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="9" cy="20" r="1"></circle>
+      <circle cx="18" cy="20" r="1"></circle>
+      <path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"></path>
+    </svg>
+  `;
+
     const header = document.createElement("div");
     header.style.cssText = `
     border-bottom: 1px solid rgba(255,255,255,.25);
@@ -366,6 +418,109 @@ function createQuoteCard() {
     justify-content: space-between;
     align-items: center;
   `;
+
+    const minimizeButton = document.createElement("button");
+    minimizeButton.id = "qc-minimize";
+    minimizeButton.type = "button";
+    minimizeButton.setAttribute("aria-label", "Minimize checkout");
+    minimizeButton.style.cssText = `
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    right: auto;
+    width: 28px;
+    height: 28px;
+    border-radius: 14px;
+    border: 1px solid rgba(0,0,0,.12);
+    background: rgba(255,255,255,.92);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    cursor: pointer;
+    color: #444;
+    box-shadow: 0 2px 10px rgba(0,0,0,.15);
+    -webkit-tap-highlight-color: transparent;
+  `;
+    minimizeButton.innerHTML = `
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"
+         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <path d="M6 12h12"></path>
+    </svg>
+  `;
+
+    const persistMinimized = (v: boolean) => {
+        hasMinimizedPref = true;
+        try {
+            localStorage.setItem(MINIMIZED_KEY, v ? "1" : "0");
+        } catch {}
+    };
+
+    const applyBottomOffset = () => {
+        const v = isPhone() ? "84px" : "12px";
+        card.style.setProperty("--qc-bottom", v);
+        fabButton.style.setProperty("--qc-bottom", v);
+    };
+
+    const syncVisibility = () => {
+        applyBottomOffset();
+        if (!isActive) {
+            card.style.display = "none";
+            fabButton.style.display = "none";
+            minimizeButton.style.display = "none";
+            return;
+        }
+
+        const phone = isPhone();
+        if (!phone) {
+            card.style.display = "block";
+            fabButton.style.display = "none";
+            minimizeButton.style.display = "none";
+            return;
+        }
+
+        if (minimized) {
+            card.style.display = "none";
+            fabButton.style.display = "flex";
+            minimizeButton.style.display = "none";
+        } else {
+            card.style.display = "block";
+            fabButton.style.display = "none";
+            minimizeButton.style.display = "flex";
+        }
+    };
+
+    const setActive = (active: boolean) => {
+        isActive = active;
+        syncVisibility();
+    };
+
+    const setMinimized = (v: boolean, persist = true) => {
+        minimized = v;
+        if (persist && isPhone()) persistMinimized(v);
+        syncVisibility();
+    };
+
+    fabButton.onclick = () => setMinimized(false);
+    minimizeButton.onclick = () => setMinimized(true);
+
+    const attachMQ = (mq: MediaQueryList) => {
+        const cb = () => {
+            if (isPhone()) {
+                if (hasMinimizedPref) {
+                    try {
+                        minimized = localStorage.getItem(MINIMIZED_KEY) === "1";
+                    } catch {}
+                } else {
+                    minimized = true;
+                }
+            }
+            syncVisibility();
+        };
+        (mq as any).addEventListener ? mq.addEventListener("change", cb) : (mq as any).addListener(cb);
+    };
+    attachMQ(mobileMQ);
+    attachMQ(coarseMQ);
 
     const body = document.createElement("div");
     body.style.cssText = `
@@ -558,7 +713,10 @@ function createQuoteCard() {
     body.appendChild(buyButton);
     card.appendChild(header);
     card.appendChild(body);
+    card.appendChild(minimizeButton);
     document.body.appendChild(card);
+    document.body.appendChild(fabButton);
+    syncVisibility();
 
     return {
         card,
@@ -568,6 +726,9 @@ function createQuoteCard() {
         minusButton,
         plusButton,
         materialsList,
+        fabButton,
+        setActive,
+        setMinimized,
     };
 }
 
@@ -627,14 +788,14 @@ new AppBuilder()
         }
 
         function hideQuoteCard() {
-          ui.card.style.display = "none";
+          ui.setActive(false);
           ui.totalValue.textContent = "--";
           ui.materialsList.innerHTML = "";
           ui.buyButton.disabled = true;
         }
 
         function showQuoteCard() {
-          ui.card.style.display = "block";
+          ui.setActive(true);
         }
 
         const hexToColor = (hex: string | undefined, key: string): number => {

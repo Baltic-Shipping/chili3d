@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-11-19)
+// See CHANGELOG.md for modifications (updated 2025-12-04)
 import { Locale } from "./i18n";
 
 export default {
@@ -52,13 +52,13 @@ export default {
         "command.boolean.cut": "Iškirpti",
         "command.boolean.join": "Jungti",
         "command.convert.fuse": "Į būlinę sąjungą",
-        "command.create.revol": "Į sukimo apie ašį operaciją",
-        "command.create.sweep": "Į išstūmimą palei kelią",
+        "command.create.revol": "Sukimas",
+        "command.create.sweep": "Šlavimas",
         "command.convert.toFace": "Į paviršių",
         "command.convert.toShell": "Į apvalkalą",
         "command.convert.toSolid": "Į kietąjį kūną",
         "command.convert.toWire": "Į vielinę kreivę",
-        "command.convert.curveProjection": "Į kreivės projekciją",
+        "command.convert.curveProjection": "Kreivės projekcija",
         "command.create.arc": "Arka",
         "command.create.bezier": "Bezjė kreivė",
         "command.create.box": "Dėžė",
@@ -80,14 +80,14 @@ export default {
         "command.create.folder": "Aplankas",
         "command.create.group": "Grupuoti",
         "command.create.line": "Linija",
-        "command.create.loft": "Loft",
+        "command.create.loft": "Perėjimas",
         "command.create.offset": "Poslinkis",
         "command.create.polygon": "Polilinija",
         "command.create.pyramid": "Piramidė",
         "command.create.rect": "Stačiakampis",
         "command.create.section": "Sekcija",
         "command.create.sphere": "Sfera",
-        "command.create.thickSolid": "Storinti kietą kūną",
+        "command.create.thickSolid": "Storinti kūną",
         "command.doc.new": "Naujas dokumentas",
         "command.doc.open": "Atidaryti dokumentą",
         "command.doc.save": "Išsaugoti dokumentą",
@@ -281,7 +281,7 @@ export default {
         "ribbon.group.boolean": "Būlinės operacijos",
         "ribbon.group.converter": "Konvertavimas",
         "ribbon.group.draw": "Braižymas",
-        "ribbon.group.importExport": "Importavimas/Eksportavimas",
+        "ribbon.group.importExport": "Importas/Eksportas",
         "ribbon.group.measure": "Matavimas",
         "ribbon.group.modify": "Modifikavimas",
         "ribbon.group.other": "Kita",

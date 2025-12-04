@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-10-21)
+// See CHANGELOG.md for modifications (updated 2025-12-04)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -129,6 +129,16 @@ export class Config extends Observable {
     }
 
     @Serializer.serialze()
+    get orbitRotationMode(): "turntable" | "trackball" {
+        return this.getPrivateValue("orbitRotationMode", "trackball");
+    }
+    set orbitRotationMode(value: "turntable" | "trackball") {
+        this.setProperty("orbitRotationMode", value, () => {
+            this.saveToStorage();
+        });
+    }
+
+    @Serializer.serialze()
     get themeMode() {
         return this.getPrivateValue("themeMode", "system");
     }
@@ -173,6 +183,7 @@ export class Config extends Observable {
         } else {
             this.setPrivateValue("languageIndex", I18n.defaultLanguageIndex());
             this.setPrivateValue("navigation3DIndex", 0);
+            this.setPrivateValue("orbitRotationMode", "trackball");
             this.setPrivateValue("themeMode", "system");
         }
 

@@ -1,9 +1,10 @@
-// See CHANGELOG.md for modifications (updated 2025-08-13)
+// See CHANGELOG.md for modifications (updated 2025-12-04)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
 import {
     CameraType,
+    Config,
     ICameraController,
     MathUtils,
     Observable,
@@ -37,6 +38,8 @@ const CAMERA_NEAR = 0.1;
 const CAMERA_FAR = 1e6;
 const MIN_CARME_TO_TARGET = 50;
 
+type RotationMode = "turntable" | "trackball";
+
 Camera.DEFAULT_UP = new Vector3(0, 0, 1);
 
 export class CameraController extends Observable implements ICameraController {
@@ -46,6 +49,16 @@ export class CameraController extends Observable implements ICameraController {
     private _position: Vector3 = new Vector3(1500, 1500, 1500);
     private _rotateCenter: Vector3 | undefined;
     private _camera: PerspectiveCamera | OrthographicCamera;
+
+    private _rotationMode: RotationMode = "turntable";
+
+    get rotationMode(): RotationMode {
+        return this._rotationMode;
+    }
+
+    set rotationMode(value: RotationMode) {
+        this._rotationMode = value;
+    }
 
     get cameraType(): CameraType {
         return this.getPrivateValue("cameraType", "perspective");
@@ -87,7 +100,15 @@ export class CameraController extends Observable implements ICameraController {
     constructor(readonly view: ThreeView) {
         super();
         this._camera = this.createCamera(CAMERA_NEAR, CAMERA_FAR);
+        this._rotationMode = Config.instance.orbitRotationMode as RotationMode;
+        Config.instance.onPropertyChanged(this.handleConfigChanged);
     }
+
+    private readonly handleConfigChanged = (prop: keyof Config) => {
+        if (prop === "orbitRotationMode") {
+            this._rotationMode = Config.instance.orbitRotationMode as RotationMode;
+        }
+    };
 
     private createCamera(near: number, far: number) {
         let camera: PerspectiveCamera | OrthographicCamera;
@@ -163,7 +184,9 @@ export class CameraController extends Observable implements ICameraController {
         const nodes = this.view.document.selection.getSelectedNodes();
         if (nodes.length > 0) {
             for (const node of nodes) {
-                const shape = this.view.document.visual.context.getVisual(node) as ThreeVisualObject | undefined;
+                const shape = this.view.document.visual.context.getVisual(node) as
+                    | ThreeVisualObject
+                    | undefined;
                 if (!shape) continue;
                 box.expandByObject(shape);
             }
@@ -212,6 +235,16 @@ export class CameraController extends Observable implements ICameraController {
     }
 
     private getRotation(dx: number, dy: number) {
+        switch (this._rotationMode) {
+            case "trackball":
+                return this.getTrackballRotation(dx, dy);
+            case "turntable":
+            default:
+                return this.getTurntableRotation(dx, dy);
+        }
+    }
+
+    private getTurntableRotation(dx: number, dy: number) {
         const rotationDy = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), MathUtils.degToRad(-dy));
         const tmpRotation = this._camera.quaternion.clone().multiply(rotationDy);
         const tmpRotationInv = tmpRotation.clone().invert();
@@ -220,6 +253,24 @@ export class CameraController extends Observable implements ICameraController {
             MathUtils.degToRad(-dx),
         );
         return tmpRotation.clone().multiply(rotationDx);
+    }
+
+    private getTrackballRotation(dx: number, dy: number) {
+        const q = this._camera.quaternion.clone();
+
+        const right = new Vector3(1, 0, 0).applyQuaternion(q);
+        const up = new Vector3(0, 1, 0).applyQuaternion(q);
+
+        const axis = right.multiplyScalar(-dy).add(up.multiplyScalar(-dx));
+        const axisLen = axis.length();
+        if (axisLen < 1e-8) return q;
+
+        axis.divideScalar(axisLen);
+
+        const angleDeg = Math.sqrt(dx * dx + dy * dy);
+        const dragRot = new Quaternion().setFromAxisAngle(axis, MathUtils.degToRad(angleDeg));
+
+        return q.premultiply(dragRot);
     }
 
     fitContent(): void {

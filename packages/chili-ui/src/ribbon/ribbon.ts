@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-12-04)
+// See CHANGELOG.md for modifications (updated 2025-12-08)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -109,9 +109,20 @@ class DisplayConverter implements IConverter<RibbonTabData> {
 }
 
 export class Ribbon extends HTMLElement {
-    private readonly _commandContextSlot = div({ className: style.commandContextSlot });
+    private readonly _commandContextPanel = div({
+        className: style.commandContextPanel,
+        id: "commandContextPanel",
+    });
+    private readonly _commandContextStatic = div({
+        id: "commandContextStatic",
+        style: "display:flex; align-items:center; gap:8px; padding:0 8px; flex:0 0 auto; min-width:0;",
+    });
+    private readonly _commandContextHost = div({
+        id: "commandContextHost",
+        style: "display:flex; align-items:center; flex:1 1 auto; min-width:0; overflow:hidden;",
+    });
+
     private readonly _orbitModeSelect: HTMLSelectElement;
-    private readonly _commandContext: HTMLDivElement;
     private commandContext?: CommandContext;
 
     constructor(readonly dataContent: RibbonDataContent) {
@@ -120,17 +131,16 @@ export class Ribbon extends HTMLElement {
 
         this._orbitModeSelect = this.createOrbitModeSelect();
 
-        this._commandContext = div(
-            { className: style.commandContextPanel },
-            this._commandContextSlot,
+        this._commandContextStatic.append(
             div(
-                { className: style.orbitPanel },
+                { className: style.orbitPanel, id: "orbitPanel", style: "order: 999;" },
                 label({ className: style.contextLabel, textContent: "Orbit:" }),
                 this._orbitModeSelect,
             ),
         );
 
-        this.append(this.header(), this.ribbonTabs(), this._commandContext);
+        this._commandContextPanel.append(this._commandContextHost, this._commandContextStatic);
+        this.append(this.header(), this.ribbonTabs(), this._commandContextPanel);
     }
 
     private createOrbitModeSelect(): HTMLSelectElement {
@@ -330,14 +340,14 @@ export class Ribbon extends HTMLElement {
             this.closeContext();
         }
         this.commandContext = new CommandContext(command);
-        this._commandContextSlot.append(this.commandContext);
+        this._commandContextHost.append(this.commandContext);
     };
 
     private readonly closeContext = () => {
         this.commandContext?.remove();
         this.commandContext?.dispose();
         this.commandContext = undefined;
-        this._commandContextSlot.innerHTML = "";
+        this._commandContextHost.innerHTML = "";
     };
 }
 

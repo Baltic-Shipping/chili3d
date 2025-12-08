@@ -44,3 +44,4 @@
 **2025-11-19** - update translations, fix imported shape thickness not detected
 **2025-11-21** - calculate total cut length and total cut count for all laser cuttable shapes
 **2025-12-04** - add new camera mode, change checkout card behaviour on phones, update translations
+**2025-12-08** - improve templates/cut out wizard menu for mobile layout

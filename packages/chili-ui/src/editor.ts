@@ -1,4 +1,4 @@
-// See CHANGELOG.md for modifications (updated 2025-10-21)
+// See CHANGELOG.md for modifications (updated 2025-12-08)
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
@@ -215,10 +215,11 @@ export class Editor extends HTMLElement {
             }),
         );
         this.innerHTML = "";
+        const ribbon = new Ribbon(this.ribbonContent);
         this.append(
             div(
                 { className: style.root },
-                new Ribbon(this.ribbonContent),
+                ribbon,
                 div(
                     { className: style.content },
                     this._templateSidebarEl,
@@ -228,6 +229,153 @@ export class Editor extends HTMLElement {
                 new Statusbar(style.statusbar),
             ),
         );
+        this.installMobileTemplatesPopup(ribbon, templatesExpander);
+    }
+
+    private installMobileTemplatesPopup(ribbonEl: HTMLElement, templatesExpander: HTMLElement) {
+        const mq = window.matchMedia("(max-width: 680px)");
+
+        const commandPanel = (ribbonEl.querySelector("#commandContextPanel") as HTMLElement | null) ?? null;
+        const staticHost =
+            (ribbonEl.querySelector("#commandContextStatic") as HTMLElement | null) ?? commandPanel;
+
+        if (!commandPanel || !staticHost) return;
+
+        const expHeader = templatesExpander.firstElementChild as HTMLElement | null;
+        if (expHeader) expHeader.style.display = "none";
+
+        const openBtn = button({
+            textContent: "Templates",
+            onclick: () => open(),
+            style: `
+            height:28px; padding:0 10px; border-radius:8px; margin-right: 160px;
+            border:1px solid var(--border-color);
+            background: var(--panel-background-color);
+            font-size:12px; font-weight:700;
+            white-space:nowrap;
+            `,
+        });
+
+        const backdrop = div({
+            style: `
+            position:fixed; inset:0;
+            background: rgba(0,0,0,.35);
+            display:none;
+            z-index: 3000;
+            `,
+            onclick: () => close(),
+        });
+
+        const panel = div({
+            style: `
+            position:fixed;
+            left:12px; right:12px;
+            display:none;
+            z-index: 3001;
+            border-radius:14px;
+            background: var(--panel-background-color);
+            box-shadow: 0 14px 40px rgba(0,0,0,.35);
+            overflow:hidden;
+            `,
+            onclick: (e: MouseEvent) => e.stopPropagation(),
+        });
+
+        const closeBtn = button({
+            textContent: "✕",
+            onclick: () => close(),
+            style: `
+            width:36px; height:32px; border-radius:10px;
+            border:1px solid var(--border-color);
+            background: transparent;
+            font-size:14px; font-weight:800;
+            `,
+        });
+
+        const header = div(
+            {
+                style: "display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-bottom:1px solid var(--border-color);",
+            },
+            div({ style: "font-weight:900; font-size:14px;", textContent: "Templates" }),
+            closeBtn,
+        );
+
+        const body = div({
+            style: `
+            padding: 12px;
+            max-height: 55vh;
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
+            `,
+        });
+
+        panel.append(header, body);
+
+        const position = () => {
+            const r = commandPanel.getBoundingClientRect();
+            const top = Math.round(r.bottom + 8);
+            panel.style.top = `${top}px`;
+            panel.style.maxHeight = `calc(100vh - ${top}px - 12px)`;
+        };
+
+        const open = () => {
+            position();
+            backdrop.style.display = "block";
+            panel.style.display = "block";
+        };
+
+        const close = () => {
+            backdrop.style.display = "none";
+            panel.style.display = "none";
+        };
+
+        let wiredAutoClose = false;
+
+        const wireAutoClose = () => {
+            if (wiredAutoClose) return;
+            wiredAutoClose = true;
+
+            templatesExpander.addEventListener(
+                "click",
+                (e) => {
+                    const t = e.target as HTMLElement | null;
+                    if (!t) return;
+
+                    if (t.closest("ribbon-button, ribbon-toggle-button")) {
+                        queueMicrotask(close);
+                        return;
+                    }
+
+                    const wizardButton = t.closest("#cutout-body button");
+                    if (wizardButton) {
+                        queueMicrotask(close);
+                        return;
+                    }
+                },
+                { capture: true },
+            );
+        };
+
+        const mount = () => {
+            if (mq.matches) {
+                body.append(templatesExpander);
+                if (!openBtn.isConnected) staticHost.append(openBtn);
+                wireAutoClose();
+            } else {
+                this._templateSidebarEl?.append(templatesExpander);
+                openBtn.remove();
+                close();
+            }
+        };
+
+        mount();
+        (mq as any).addEventListener ? mq.addEventListener("change", mount) : (mq as any).addListener(mount);
+
+        const onVV = () => panel.style.display !== "none" && position();
+        window.addEventListener("resize", onVV, { passive: true });
+        window.visualViewport?.addEventListener("resize", onVV, { passive: true });
+        window.visualViewport?.addEventListener("scroll", onVV, { passive: true });
+
+        this.append(backdrop, panel);
     }
 
     private async startCutoutFlow() {
